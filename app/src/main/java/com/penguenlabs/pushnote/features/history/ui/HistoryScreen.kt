@@ -263,7 +263,8 @@ private fun HistoryItem(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "⏰",
-                        fontSize = 14.sp
+                        fontSize = 14.sp,
+                        color = Color(0xFFE53935)
                     )
                 }
             }

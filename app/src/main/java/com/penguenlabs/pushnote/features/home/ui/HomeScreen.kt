@@ -2,7 +2,13 @@ package com.penguenlabs.pushnote.features.home.ui
 
 import android.os.Build
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,18 +20,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -36,7 +35,6 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,14 +46,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
@@ -95,7 +95,6 @@ fun HomeScreen(
                 }
             val inAppReviewManager = rememberInAppReviewManager()
             val context = LocalContext.current
-
             var showScheduleDialog by remember { mutableStateOf(false) }
 
             Column(
@@ -109,9 +108,7 @@ fun HomeScreen(
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                Spacer(
-                    modifier = Modifier.height(16.dp)
-                )
+                Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -135,50 +132,47 @@ fun HomeScreen(
                     colors = OutlinedTextFieldDefaults.colors(focusedTextColor = MaterialTheme.colorScheme.onBackground),
                     isError = homeScreeState.isError,
                 )
-                Spacer(
-                    modifier = Modifier.height(12.dp)
-                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Icon row: pin toggle + schedule button
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
-                        val hapticFeedback = LocalHapticFeedback.current
-
-                        Checkbox(checked = homeScreeState.isPinnedNote, onCheckedChange = {
-                            homeViewModel.onCheckedChange(it)
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        })
-                    }
-                    Spacer(
-                        modifier = Modifier.width(4.dp)
-                    )
+                    // Pin button (red thumbtack when active)
                     Text(
-                        text = stringResource(id = R.string.pinned_note),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "📌",
+                        fontSize = 22.sp,
+                        modifier = Modifier
+                            .clickable {
+                                homeViewModel.onCheckedChange(!homeScreeState.isPinnedNote)
+                            }
+                            .padding(4.dp),
+                        color = if (homeScreeState.isPinnedNote)
+                            Color(0xFFE53935)
+                        else
+                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f)
                     )
                     Spacer(modifier = Modifier.weight(1f))
-                    // Schedule button
-                    IconButton(onClick = { showScheduleDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = stringResource(id = R.string.schedule_note),
-                            tint = if (homeScreeState.scheduleConfig.isScheduled)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                        )
-                    }
+                    // Schedule button (red alarm clock)
+                    Text(
+                        text = "⏰",
+                        fontSize = 20.sp,
+                        modifier = Modifier
+                            .clickable { showScheduleDialog = true }
+                            .padding(4.dp),
+                        color = if (homeScreeState.scheduleConfig.isScheduled)
+                            Color(0xFFE53935)
+                        else
+                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f)
+                    )
                 }
 
                 // Show schedule info if scheduled
                 if (homeScreeState.scheduleConfig.isScheduled) {
                     val scheduleConfig = homeScreeState.scheduleConfig
                     val timeText = String.format(
-                        "%02d:%02d",
-                        scheduleConfig.hour,
-                        scheduleConfig.minute
+                        "%02d:%02d", scheduleConfig.hour, scheduleConfig.minute
                     )
                     val datePart = if (scheduleConfig.year != null && scheduleConfig.month != null && scheduleConfig.day != null) {
                         String.format("%04d-%02d-%02d  ", scheduleConfig.year, scheduleConfig.month + 1, scheduleConfig.day)
@@ -197,13 +191,12 @@ fun HomeScreen(
                     )
                 }
 
-                Spacer(
-                    modifier = Modifier.height(24.dp)
-                )
+                Spacer(modifier = Modifier.height(24.dp))
                 Button(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(45.dp), onClick = {
+                        .height(45.dp),
+                    onClick = {
                         if (notificationPermissionState?.status?.isGranted?.not() == true) {
                             onNotificationPermissionNeed(homeScreeState.textFieldValue)
                         } else {
@@ -212,7 +205,8 @@ fun HomeScreen(
                                 isPinnedNote = homeScreeState.isPinnedNote
                             )
                         }
-                    }, shape = RoundedCornerShape(8.dp)
+                    },
+                    shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
                         text = if (homeScreeState.scheduleConfig.isScheduled)
@@ -222,9 +216,7 @@ fun HomeScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
-                Spacer(
-                    modifier = Modifier.height(8.dp)
-                )
+                Spacer(modifier = Modifier.height(8.dp))
                 TextButton(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -239,8 +231,12 @@ fun HomeScreen(
                 }
             }
 
-            // Schedule configuration dialog
-            if (showScheduleDialog) {
+            // Schedule dialog with slide transition
+            AnimatedVisibility(
+                visible = showScheduleDialog,
+                enter = fadeIn() + slideInVertically(initialOffsetY = { it / 4 }),
+                exit = fadeOut() + slideOutVertically(targetOffsetY = { it / 4 })
+            ) {
                 ScheduleDialog(
                     scheduleConfig = homeScreeState.scheduleConfig,
                     onDismiss = { showScheduleDialog = false },
@@ -267,7 +263,6 @@ fun HomeScreen(
                 homeViewModel.updateScreenState()
                 delay(timeMillis = FOCUS_REQUEST_DELAY)
                 textFieldFocusRequester.requestFocus()
-
                 if (pushNotificationText.isNotEmpty() or pushNotificationText.isNotBlank()) {
                     homeViewModel.sendNotification(
                         pushNotificationText, homeScreeState.isPinnedNote
@@ -325,173 +320,179 @@ private fun ScheduleDialog(
     var showTimePicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
 
-    AlertDialog(
+    // Custom dialog matching main dialog style
+    Dialog(
         onDismissRequest = onDismiss,
-        title = {
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(color = MaterialTheme.colorScheme.background)
+                .padding(24.dp)
+        ) {
+            // Title
             Text(
                 text = stringResource(id = R.string.schedule_note),
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                fontWeight = FontWeight.Bold
             )
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // Date picker trigger (for no-repeat and monthly modes)
-                if (selectedRepeatMode == RepeatMode.NONE || selectedRepeatMode == RepeatMode.MONTHLY) {
-                    val dateText = String.format("%04d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay)
-                    OutlinedButton(
-                        onClick = { showDatePicker = true },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.schedule_date) + ": $dateText",
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
+            Spacer(modifier = Modifier.height(16.dp))
 
-                // Time picker trigger
-                val timeText = String.format("%02d:%02d", selectedHour, selectedMinute)
+            // Date picker trigger (for no-repeat and monthly modes)
+            if (selectedRepeatMode == RepeatMode.NONE || selectedRepeatMode == RepeatMode.MONTHLY) {
+                val dateText = String.format("%04d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay)
                 OutlinedButton(
-                    onClick = { showTimePicker = true },
+                    onClick = { showDatePicker = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = stringResource(id = R.string.schedule_time) + ": $timeText",
+                        text = stringResource(id = R.string.schedule_date) + ": $dateText",
                         color = MaterialTheme.colorScheme.onBackground
                     )
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Repeat mode selection
+            // Time picker trigger
+            val timeText = String.format("%02d:%02d", selectedHour, selectedMinute)
+            OutlinedButton(
+                onClick = { showTimePicker = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text(
-                    text = stringResource(id = R.string.repeat_mode),
+                    text = stringResource(id = R.string.schedule_time) + ": $timeText",
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Repeat mode selection
+            Text(
+                text = stringResource(id = R.string.repeat_mode),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = selectedRepeatMode == RepeatMode.NONE,
+                    onClick = { selectedRepeatMode = RepeatMode.NONE },
+                    label = { Text(stringResource(id = R.string.repeat_none)) }
+                )
+                FilterChip(
+                    selected = selectedRepeatMode == RepeatMode.DAILY,
+                    onClick = { selectedRepeatMode = RepeatMode.DAILY },
+                    label = { Text(stringResource(id = R.string.repeat_daily)) }
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = selectedRepeatMode == RepeatMode.WEEKLY,
+                    onClick = { selectedRepeatMode = RepeatMode.WEEKLY },
+                    label = { Text(stringResource(id = R.string.repeat_weekly)) }
+                )
+                FilterChip(
+                    selected = selectedRepeatMode == RepeatMode.MONTHLY,
+                    onClick = { selectedRepeatMode = RepeatMode.MONTHLY },
+                    label = { Text(stringResource(id = R.string.repeat_monthly)) }
+                )
+            }
+
+            // Weekly: day-of-week selector
+            if (selectedRepeatMode == RepeatMode.WEEKLY) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = stringResource(id = R.string.select_weekday),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        selected = selectedRepeatMode == RepeatMode.NONE,
-                        onClick = { selectedRepeatMode = RepeatMode.NONE },
-                        label = { Text(stringResource(id = R.string.repeat_none)) }
-                    )
-                    FilterChip(
-                        selected = selectedRepeatMode == RepeatMode.DAILY,
-                        onClick = { selectedRepeatMode = RepeatMode.DAILY },
-                        label = { Text(stringResource(id = R.string.repeat_daily)) }
-                    )
-                }
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    FilterChip(
-                        selected = selectedRepeatMode == RepeatMode.WEEKLY,
-                        onClick = { selectedRepeatMode = RepeatMode.WEEKLY },
-                        label = { Text(stringResource(id = R.string.repeat_weekly)) }
-                    )
-                    FilterChip(
-                        selected = selectedRepeatMode == RepeatMode.MONTHLY,
-                        onClick = { selectedRepeatMode = RepeatMode.MONTHLY },
-                        label = { Text(stringResource(id = R.string.repeat_monthly)) }
-                    )
-                }
-
-                // Weekly: day-of-week selector
-                if (selectedRepeatMode == RepeatMode.WEEKLY) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = stringResource(id = R.string.select_weekday),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        val weekDays = listOf("一", "二", "三", "四", "五", "六", "日")
-                        weekDays.forEachIndexed { index, label ->
-                            FilterChip(
-                                selected = selectedDayOfWeek == index,
-                                onClick = { selectedDayOfWeek = index },
-                                label = { Text(label) }
-                            )
-                        }
+                    val weekDays = listOf("一", "二", "三", "四", "五", "六", "日")
+                    weekDays.forEachIndexed { index, label ->
+                        FilterChip(
+                            selected = selectedDayOfWeek == index,
+                            onClick = { selectedDayOfWeek = index },
+                            label = { Text(label) }
+                        )
                     }
                 }
-
-                // Weekly: day-of-week selector
             }
-        },
-        confirmButton = {
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Confirm button
             Button(
+                modifier = Modifier.fillMaxWidth().height(45.dp),
                 onClick = {
                     onConfirm(selectedHour, selectedMinute, selectedRepeatMode, selectedYear, selectedMonth, selectedDay, selectedDayOfWeek, true)
-                }
+                },
+                shape = RoundedCornerShape(8.dp)
             ) {
                 Text(stringResource(id = R.string.confirm))
             }
-        },
-        dismissButton = {
-            Row {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 TextButton(onClick = onClear) {
-                    Text(
-                        stringResource(id = R.string.clear_schedule),
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    Text(stringResource(id = R.string.clear_schedule), color = MaterialTheme.colorScheme.error)
                 }
-                Spacer(modifier = Modifier.width(8.dp))
                 TextButton(onClick = onDismiss) {
                     Text(stringResource(id = R.string.cancel))
                 }
             }
         }
-    )
+    }
 
     // Time picker dialog
     if (showTimePicker) {
-        val timePickerState = rememberTimePickerState(
-            initialHour = selectedHour,
-            initialMinute = selectedMinute,
-            is24Hour = true
-        )
-        AlertDialog(
-            onDismissRequest = { showTimePicker = false },
-            title = {
+        Dialog(onDismissRequest = { showTimePicker = false }) {
+            Column(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(color = MaterialTheme.colorScheme.background)
+                    .padding(24.dp)
+            ) {
                 Text(
                     text = stringResource(id = R.string.select_time),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
-            },
-            text = {
+                Spacer(modifier = Modifier.height(16.dp))
+                val timePickerState = rememberTimePickerState(
+                    initialHour = selectedHour,
+                    initialMinute = selectedMinute,
+                    is24Hour = true
+                )
                 TimePicker(state = timePickerState)
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = { showTimePicker = false }) {
+                        Text(stringResource(id = R.string.cancel))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = {
                         selectedHour = timePickerState.hour
                         selectedMinute = timePickerState.minute
                         showTimePicker = false
+                    }) {
+                        Text(stringResource(id = R.string.confirm))
                     }
-                ) {
-                    Text(stringResource(id = R.string.confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text(stringResource(id = R.string.cancel))
                 }
             }
-        )
+        }
     }
 
     // Date picker dialog
@@ -502,15 +503,30 @@ private fun ScheduleDialog(
             set(java.util.Calendar.DAY_OF_MONTH, selectedDay)
         }.timeInMillis
 
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = initialDateMillis
-        )
-
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                Button(
-                    onClick = {
+        Dialog(onDismissRequest = { showDatePicker = false }) {
+            Column(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(color = MaterialTheme.colorScheme.background)
+                    .padding(24.dp)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.select_date),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                val datePickerState = rememberDatePickerState(
+                    initialSelectedDateMillis = initialDateMillis
+                )
+                DatePicker(state = datePickerState)
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = { showDatePicker = false }) {
+                        Text(stringResource(id = R.string.cancel))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
                             val calendar = java.util.Calendar.getInstance().apply {
                                 timeInMillis = millis
@@ -520,18 +536,11 @@ private fun ScheduleDialog(
                             selectedDay = calendar.get(java.util.Calendar.DAY_OF_MONTH)
                         }
                         showDatePicker = false
+                    }) {
+                        Text(stringResource(id = R.string.confirm))
                     }
-                ) {
-                    Text(stringResource(id = R.string.confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text(stringResource(id = R.string.cancel))
                 }
             }
-        ) {
-            DatePicker(state = datePickerState)
         }
     }
 }
