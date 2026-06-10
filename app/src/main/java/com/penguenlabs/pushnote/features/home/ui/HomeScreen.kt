@@ -244,10 +244,13 @@ fun HomeScreen(
                 ScheduleDialog(
                     scheduleConfig = homeScreeState.scheduleConfig,
                     onDismiss = { showScheduleDialog = false },
-                    onConfirm = { hour, minute, repeatMode, year, month, day, isScheduled ->
+                    onConfirm = { hour, minute, repeatMode, year, month, day, dayOfWeek, isScheduled ->
                         homeViewModel.onScheduleTimeChanged(hour, minute)
                         if (year != null && month != null && day != null) {
                             homeViewModel.onScheduleDateChanged(year, month, day)
+                        }
+                        if (dayOfWeek != null) {
+                            homeViewModel.onScheduleDayOfWeekChanged(dayOfWeek)
                         }
                         homeViewModel.onRepeatModeChanged(repeatMode)
                         homeViewModel.onScheduleToggled(isScheduled)
@@ -302,7 +305,7 @@ fun HomeScreen(
 private fun ScheduleDialog(
     scheduleConfig: ScheduleConfig,
     onDismiss: () -> Unit,
-    onConfirm: (hour: Int, minute: Int, repeatMode: RepeatMode, year: Int?, month: Int?, day: Int?, isScheduled: Boolean) -> Unit,
+    onConfirm: (hour: Int, minute: Int, repeatMode: RepeatMode, year: Int?, month: Int?, day: Int?, dayOfWeek: Int?, isScheduled: Boolean) -> Unit,
     onClear: () -> Unit
 ) {
     var selectedHour by remember { mutableStateOf(scheduleConfig.hour) }
@@ -311,6 +314,14 @@ private fun ScheduleDialog(
     var selectedYear by remember { mutableStateOf(scheduleConfig.year ?: java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)) }
     var selectedMonth by remember { mutableStateOf(scheduleConfig.month ?: java.util.Calendar.getInstance().get(java.util.Calendar.MONTH)) }
     var selectedDay by remember { mutableStateOf(scheduleConfig.day ?: java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_MONTH)) }
+    var selectedDayOfWeek by remember {
+        mutableStateOf(scheduleConfig.dayOfWeek ?: java.util.Calendar.getInstance().let {
+            it.set(java.util.Calendar.YEAR, selectedYear)
+            it.set(java.util.Calendar.MONTH, selectedMonth)
+            it.set(java.util.Calendar.DAY_OF_MONTH, selectedDay)
+            it.get(java.util.Calendar.DAY_OF_WEEK) - 1
+        })
+    }
     var showTimePicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
 
@@ -393,12 +404,46 @@ private fun ScheduleDialog(
                         label = { Text(stringResource(id = R.string.repeat_monthly)) }
                     )
                 }
+
+                // Weekly: day-of-week selector
+                if (selectedRepeatMode == RepeatMode.WEEKLY) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(id = R.string.select_weekday),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        val weekDays = listOf("一", "二", "三", "四", "五", "六", "日")
+                        weekDays.forEachIndexed { index, label ->
+                            FilterChip(
+                                selected = selectedDayOfWeek == index,
+                                onClick = { selectedDayOfWeek = index },
+                                label = { Text(label) }
+                            )
+                        }
+                    }
+                }
+
+                // Monthly: day-of-month display
+                if (selectedRepeatMode == RepeatMode.MONTHLY) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "${stringResource(id = R.string.monthly_day)}: $selectedDay",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    onConfirm(selectedHour, selectedMinute, selectedRepeatMode, selectedYear, selectedMonth, selectedDay, true)
+                    onConfirm(selectedHour, selectedMinute, selectedRepeatMode, selectedYear, selectedMonth, selectedDay, selectedDayOfWeek, true)
                 }
             ) {
                 Text(stringResource(id = R.string.confirm))

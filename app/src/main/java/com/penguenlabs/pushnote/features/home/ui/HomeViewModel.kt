@@ -78,7 +78,8 @@ class HomeViewModel @Inject constructor(
                         repeatMode = scheduleConfig.repeatMode.name,
                         year = scheduleConfig.year,
                         month = scheduleConfig.month,
-                        day = scheduleConfig.day
+                        day = scheduleConfig.day,
+                        dayOfWeek = scheduleConfig.dayOfWeek
                     )
                     triggerTime = ScheduleAlarmManager.calculateNextTriggerTime(tempNote)
                     historyActive = false
@@ -99,7 +100,8 @@ class HomeViewModel @Inject constructor(
                         repeatMode = scheduleConfig.repeatMode.name,
                         year = scheduleConfig.year,
                         month = scheduleConfig.month,
-                        day = scheduleConfig.day
+                        day = scheduleConfig.day,
+                        dayOfWeek = scheduleConfig.dayOfWeek
                     )
                     val scheduledNoteId = homeRepository.insertScheduledNote(scheduledNote)
                     val ok = scheduleAlarmManager.schedule(scheduledNote.copy(id = scheduledNoteId))
@@ -191,6 +193,12 @@ class HomeViewModel @Inject constructor(
     fun onRepeatModeChanged(repeatMode: RepeatMode) {
         homeScreeState = homeScreeState.copy(
             scheduleConfig = homeScreeState.scheduleConfig.copy(repeatMode = repeatMode)
+        )
+    }
+
+    fun onScheduleDayOfWeekChanged(dayOfWeek: Int) {
+        homeScreeState = homeScreeState.copy(
+            scheduleConfig = homeScreeState.scheduleConfig.copy(dayOfWeek = dayOfWeek)
         )
     }
 

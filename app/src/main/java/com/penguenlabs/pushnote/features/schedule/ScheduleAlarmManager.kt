@@ -111,30 +111,44 @@ class ScheduleAlarmManager @Inject constructor(
             val now = Calendar.getInstance()
             val target = Calendar.getInstance()
 
-            if (entity.year != null && entity.month != null && entity.day != null) {
-                target.set(Calendar.YEAR, entity.year)
-                target.set(Calendar.MONTH, entity.month)
-                target.set(Calendar.DAY_OF_MONTH, entity.day)
-                target.set(Calendar.HOUR_OF_DAY, entity.hour)
-                target.set(Calendar.MINUTE, entity.minute)
-                target.set(Calendar.SECOND, 0)
-                target.set(Calendar.MILLISECOND, 0)
-                if (target.timeInMillis <= now.timeInMillis && entity.repeatMode == "NONE") {
-                    target.add(Calendar.DAY_OF_YEAR, 1)
-                }
-            } else {
-                target.set(Calendar.HOUR_OF_DAY, entity.hour)
-                target.set(Calendar.MINUTE, entity.minute)
-                target.set(Calendar.SECOND, 0)
-                target.set(Calendar.MILLISECOND, 0)
+            // Set common fields
+            target.set(Calendar.HOUR_OF_DAY, entity.hour)
+            target.set(Calendar.MINUTE, entity.minute)
+            target.set(Calendar.SECOND, 0)
+            target.set(Calendar.MILLISECOND, 0)
 
-                if (target.timeInMillis <= now.timeInMillis) {
-                    when (entity.repeatMode) {
-                        "NONE" -> target.add(Calendar.DAY_OF_YEAR, 1)
-                        "DAILY" -> target.add(Calendar.DAY_OF_YEAR, 1)
-                        "WEEKLY" -> target.add(Calendar.DAY_OF_YEAR, 7)
-                        "MONTHLY" -> target.add(Calendar.MONTH, 1)
-                        else -> target.add(Calendar.DAY_OF_YEAR, 1)
+            when (entity.repeatMode) {
+                "NONE" -> {
+                    // Specific date or today at specified time
+                    if (entity.year != null && entity.month != null && entity.day != null) {
+                        target.set(Calendar.YEAR, entity.year)
+                        target.set(Calendar.MONTH, entity.month)
+                        target.set(Calendar.DAY_OF_MONTH, entity.day)
+                    }
+                    if (target.timeInMillis <= now.timeInMillis) {
+                        target.add(Calendar.DAY_OF_YEAR, 1)
+                    }
+                }
+                "DAILY" -> {
+                    if (target.timeInMillis <= now.timeInMillis) {
+                        target.add(Calendar.DAY_OF_YEAR, 1)
+                    }
+                }
+                "WEEKLY" -> {
+                    val targetDow = entity.dayOfWeek ?: (now.get(Calendar.DAY_OF_WEEK) - 1)
+                    // Map: our 0=Monday to Calendar.SUNDAY=1, MONDAY=2...
+                    val calendarDow = if (targetDow == 6) Calendar.SUNDAY else targetDow + 2
+                    val currentDow = now.get(Calendar.DAY_OF_WEEK)
+                    var daysUntil = calendarDow - currentDow
+                    if (daysUntil < 0) daysUntil += 7
+                    if (daysUntil == 0 && target.timeInMillis <= now.timeInMillis) daysUntil = 7
+                    target.add(Calendar.DAY_OF_YEAR, daysUntil)
+                }
+                "MONTHLY" -> {
+                    val targetDay = entity.day ?: now.get(Calendar.DAY_OF_MONTH)
+                    target.set(Calendar.DAY_OF_MONTH, targetDay.coerceAtMost(28))
+                    if (target.timeInMillis <= now.timeInMillis) {
+                        target.add(Calendar.MONTH, 1)
                     }
                 }
             }

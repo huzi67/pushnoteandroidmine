@@ -10,7 +10,7 @@ import com.penguenlabs.pushnote.data.local.entity.HistoryEntity
 import com.penguenlabs.pushnote.data.local.entity.ScheduledNoteEntity
 
 const val DATABASE_NAME = "history"
-private const val DATABASE_VERSION = 6
+private const val DATABASE_VERSION = 7
 
 @Suppress("unused")
 @Database(
@@ -64,5 +64,11 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
 val MIGRATION_5_6 = object : Migration(5, 6) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL("ALTER TABLE HistoryEntity ADD COLUMN is_scheduled_note INTEGER DEFAULT 0 NOT NULL")
+    }
+}
+
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE ScheduledNoteEntity ADD COLUMN schedule_day_of_week INTEGER")
     }
 }

@@ -9,6 +9,7 @@ data class ScheduleConfig(
     val year: Int? = null,
     val month: Int? = null,
     val day: Int? = null,
+    val dayOfWeek: Int? = null,
     val repeatMode: RepeatMode = RepeatMode.NONE
 )
 
