@@ -5,7 +5,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.os.PowerManager
 import android.util.Log
 import com.penguenlabs.pushnote.data.local.entity.ScheduledNoteEntity
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -19,26 +18,28 @@ class ScheduleAlarmManager @Inject constructor(
         context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
     fun schedule(scheduledNote: ScheduledNoteEntity): Boolean {
+        // Cancel any existing alarm for this ID first (prevents duplicate firing)
+        cancel(scheduledNote.id)
+
         val now = System.currentTimeMillis()
         val triggerTime = calculateNextTriggerTime(scheduledNote)
         val secondsUntil = (triggerTime - now) / 1000
         Log.d(TAG, "=== Scheduling alarm ===")
         Log.d(TAG, "noteId=${scheduledNote.id} note='${scheduledNote.note}'")
         Log.d(TAG, "triggerTime=$triggerTime (in $secondsUntil seconds)")
-        Log.d(TAG, "repeat=${scheduledNote.repeatMode} " +
-                "hour=${scheduledNote.hour} minute=${scheduledNote.minute}")
+        Log.d(TAG, "repeat=${scheduledNote.repeatMode} hour=${scheduledNote.hour} minute=${scheduledNote.minute}")
 
         val pendingIntent = createPendingIntent(scheduledNote.id)
         var success = false
 
-        // Tier 1: setExactAndAllowWhileIdle (requires SCHEDULE_EXACT_ALARM on API 33+)
+        // Tier 1: setExactAndAllowWhileIdle (best for modern Android)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             try {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent
                 )
                 success = true
-                Log.d(TAG, "✅ Alarm set via setExactAndAllowWhileIdle for noteId=${scheduledNote.id}")
+                Log.d(TAG, "✅ setExactAndAllowWhileIdle noteId=${scheduledNote.id}")
             } catch (e: SecurityException) {
                 Log.w(TAG, "setExactAndAllowWhileIdle denied: ${e.message}")
             } catch (e: Exception) {
@@ -46,26 +47,22 @@ class ScheduleAlarmManager @Inject constructor(
             }
         }
 
-        // Tier 2: setAlarmClock with showIntent (bypasses Doze, no permission needed)
+        // Tier 2: setAlarmClock (bypasses Doze, no permission needed)
+        // IMPORTANT: showIntent must be null, otherwise Samsung loops the alarm
         if (!success) {
             try {
-                val showIntent = PendingIntent.getActivity(
-                    context, 0,
-                    Intent(context, Class.forName("com.penguenlabs.pushnote.features.MainActivity")),
-                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-                )
                 alarmManager.setAlarmClock(
-                    AlarmManager.AlarmClockInfo(triggerTime, showIntent),
+                    AlarmManager.AlarmClockInfo(triggerTime, null),
                     pendingIntent
                 )
                 success = true
-                Log.d(TAG, "✅ Alarm set via setAlarmClock for noteId=${scheduledNote.id}")
+                Log.d(TAG, "✅ setAlarmClock noteId=${scheduledNote.id}")
             } catch (e: Exception) {
                 Log.w(TAG, "setAlarmClock failed: ${e.message}")
             }
         }
 
-        // Tier 3: setExact (older API fallback)
+        // Tier 3: setExact / set (old API fallback)
         if (!success) {
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -74,9 +71,9 @@ class ScheduleAlarmManager @Inject constructor(
                     alarmManager.set(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
                 }
                 success = true
-                Log.d(TAG, "✅ Alarm set via setExact for noteId=${scheduledNote.id}")
+                Log.d(TAG, "✅ setExact noteId=${scheduledNote.id}")
             } catch (e: Exception) {
-                Log.e(TAG, "❌ All alarm methods failed for noteId=${scheduledNote.id}", e)
+                Log.e(TAG, "❌ All methods failed noteId=${scheduledNote.id}", e)
             }
         }
 
@@ -92,6 +89,7 @@ class ScheduleAlarmManager @Inject constructor(
         if (pendingIntent != null) {
             pendingIntent.cancel()
             alarmManager.cancel(pendingIntent)
+            Log.d(TAG, "Cancelled alarm for noteId=$scheduledNoteId")
         }
     }
 
@@ -124,19 +122,34 @@ class ScheduleAlarmManager @Inject constructor(
                 if (target.timeInMillis <= now.timeInMillis && entity.repeatMode == "NONE") {
                     target.add(Calendar.DAY_OF_YEAR, 1)
                 }
-                return target.timeInMillis
+            } else {
+                target.set(Calendar.HOUR_OF_DAY, entity.hour)
+                target.set(Calendar.MINUTE, entity.minute)
+                target.set(Calendar.SECOND, 0)
+                target.set(Calendar.MILLISECOND, 0)
+
+                if (target.timeInMillis <= now.timeInMillis) {
+                    when (entity.repeatMode) {
+                        "NONE" -> target.add(Calendar.DAY_OF_YEAR, 1)
+                        "DAILY" -> target.add(Calendar.DAY_OF_YEAR, 1)
+                        "WEEKLY" -> target.add(Calendar.DAY_OF_YEAR, 7)
+                        "MONTHLY" -> target.add(Calendar.MONTH, 1)
+                        else -> target.add(Calendar.DAY_OF_YEAR, 1)
+                    }
+                }
             }
 
-            target.set(Calendar.HOUR_OF_DAY, entity.hour)
-            target.set(Calendar.MINUTE, entity.minute)
-            target.set(Calendar.SECOND, 0)
-            target.set(Calendar.MILLISECOND, 0)
-
-            when (entity.repeatMode) {
-                "NONE" -> { if (target.timeInMillis <= now.timeInMillis) target.add(Calendar.DAY_OF_YEAR, 1) }
-                "DAILY" -> { if (target.timeInMillis <= now.timeInMillis) target.add(Calendar.DAY_OF_YEAR, 1) }
-                "WEEKLY" -> { if (target.timeInMillis <= now.timeInMillis) target.add(Calendar.DAY_OF_YEAR, 7) }
-                "MONTHLY" -> { if (target.timeInMillis <= now.timeInMillis) target.add(Calendar.MONTH, 1) }
+            // Safety: ensure trigger time is at least 5 seconds in the future
+            val minTime = System.currentTimeMillis() + 5000
+            if (target.timeInMillis < minTime) {
+                val corrected = when (entity.repeatMode) {
+                    "DAILY" -> { target.add(Calendar.DAY_OF_YEAR, 1); target }
+                    "WEEKLY" -> { target.add(Calendar.DAY_OF_YEAR, 7); target }
+                    "MONTHLY" -> { target.add(Calendar.MONTH, 1); target }
+                    else -> { target.add(Calendar.DAY_OF_YEAR, 1); target }
+                }
+                Log.w(TAG, "Trigger time too close, corrected to ${corrected.timeInMillis}")
+                return corrected.timeInMillis
             }
 
             return target.timeInMillis
