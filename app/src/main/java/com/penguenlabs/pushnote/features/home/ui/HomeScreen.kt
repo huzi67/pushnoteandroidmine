@@ -337,8 +337,8 @@ private fun ScheduleDialog(
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Date picker trigger (only for no-repeat mode)
-                if (selectedRepeatMode == RepeatMode.NONE) {
+                // Date picker trigger (for no-repeat and monthly modes)
+                if (selectedRepeatMode == RepeatMode.NONE || selectedRepeatMode == RepeatMode.MONTHLY) {
                     val dateText = String.format("%04d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay)
                     OutlinedButton(
                         onClick = { showDatePicker = true },
@@ -429,15 +429,7 @@ private fun ScheduleDialog(
                     }
                 }
 
-                // Monthly: day-of-month display
-                if (selectedRepeatMode == RepeatMode.MONTHLY) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "${stringResource(id = R.string.monthly_day)}: $selectedDay",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
+                // Weekly: day-of-week selector
             }
         },
         confirmButton = {

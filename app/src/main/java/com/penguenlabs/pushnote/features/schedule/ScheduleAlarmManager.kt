@@ -146,9 +146,18 @@ class ScheduleAlarmManager @Inject constructor(
                 }
                 "MONTHLY" -> {
                     val targetDay = entity.day ?: now.get(Calendar.DAY_OF_MONTH)
-                    target.set(Calendar.DAY_OF_MONTH, targetDay.coerceAtMost(28))
+                    target.set(Calendar.DAY_OF_MONTH, 1) // go to first day
+                    target.set(Calendar.DAY_OF_MONTH, targetDay)
+                    // If day overflowed into next month (e.g. Feb 31 -> Mar 3), use last day
+                    if (target.get(Calendar.DAY_OF_MONTH) != targetDay.coerceAtMost(target.getActualMaximum(Calendar.DAY_OF_MONTH))) {
+                        target.set(Calendar.DAY_OF_MONTH, target.getActualMaximum(Calendar.DAY_OF_MONTH))
+                    }
                     if (target.timeInMillis <= now.timeInMillis) {
                         target.add(Calendar.MONTH, 1)
+                        // Re-validate after adding a month
+                        if (target.get(Calendar.DAY_OF_MONTH) < targetDay.coerceAtMost(target.getActualMaximum(Calendar.DAY_OF_MONTH))) {
+                            target.set(Calendar.DAY_OF_MONTH, target.getActualMaximum(Calendar.DAY_OF_MONTH))
+                        }
                     }
                 }
             }
