@@ -9,7 +9,9 @@ import androidx.lifecycle.viewModelScope
 import com.penguenlabs.pushnote.analytics.Event
 import com.penguenlabs.pushnote.analytics.EventLogger
 import com.penguenlabs.pushnote.data.local.entity.HistoryEntity
+import com.penguenlabs.pushnote.data.local.entity.ScheduledNoteEntity
 import com.penguenlabs.pushnote.features.home.data.HomeRepository
+import com.penguenlabs.pushnote.features.schedule.ScheduleAlarmManager
 import com.penguenlabs.pushnote.pushnotification.counter.NotificationCounter
 import com.penguenlabs.pushnote.pushnotification.sender.NotificationSender
 import com.penguenlabs.pushnote.userdefault.pinnednotification.PinnedNoteUserDefault
@@ -25,7 +27,8 @@ class HomeViewModel @Inject constructor(
     private val notificationSender: NotificationSender,
     private val homeRepository: HomeRepository,
     private val eventLogger: EventLogger,
-    private val notificationCounter: NotificationCounter
+    private val notificationCounter: NotificationCounter,
+    private val scheduleAlarmManager: ScheduleAlarmManager
 ) : ViewModel() {
 
     var homeScreeState by mutableStateOf(
@@ -37,6 +40,12 @@ class HomeViewModel @Inject constructor(
 
     private val _inAppReviewLauncher = MutableSharedFlow<Unit>()
     val inAppReviewLauncher = _inAppReviewLauncher.asSharedFlow()
+
+    private val _dismissRequest = MutableSharedFlow<Unit>()
+    val dismissRequest = _dismissRequest.asSharedFlow()
+
+    private val _scheduleResult = MutableSharedFlow<Boolean>()
+    val scheduleResult = _scheduleResult.asSharedFlow()
 
     private val requiredNotificationCountRange = 8..10
 
@@ -55,25 +64,68 @@ class HomeViewModel @Inject constructor(
             homeScreeState = if (pushNotificationText.isEmpty()) {
                 homeScreeState.copy(isError = true)
             } else {
-                val notificationEntityId: Long = insertHistory(pushNotificationText, isPinnedNote)
+                val isScheduled = homeScreeState.scheduleConfig.isScheduled
+                val scheduleConfig = homeScreeState.scheduleConfig
 
-                if (isPinnedNote) {
-                    notificationSender.sendPinnedNotification(
-                        notificationEntityId = notificationEntityId,
-                        pushNotificationText = pushNotificationText
+                // For scheduled notes, calculate trigger time and store history as inactive
+                val triggerTime: Long
+                val historyActive: Boolean
+                if (isScheduled) {
+                    val tempNote = ScheduledNoteEntity(
+                        note = pushNotificationText,
+                        hour = scheduleConfig.hour,
+                        minute = scheduleConfig.minute,
+                        repeatMode = scheduleConfig.repeatMode.name,
+                        year = scheduleConfig.year,
+                        month = scheduleConfig.month,
+                        day = scheduleConfig.day
                     )
+                    triggerTime = ScheduleAlarmManager.calculateNextTriggerTime(tempNote)
+                    historyActive = false
                 } else {
-                    notificationSender.sendNotification(
-                        notificationEntityId = notificationEntityId,
-                        pushNotificationText = pushNotificationText
+                    triggerTime = System.currentTimeMillis()
+                    historyActive = true
+                }
+
+                val notificationEntityId: Long = insertHistory(
+                    pushNotificationText, isPinnedNote, isScheduled, triggerTime, historyActive
+                )
+
+                if (isScheduled) {
+                    val scheduledNote = ScheduledNoteEntity(
+                        note = pushNotificationText,
+                        hour = scheduleConfig.hour,
+                        minute = scheduleConfig.minute,
+                        repeatMode = scheduleConfig.repeatMode.name,
+                        year = scheduleConfig.year,
+                        month = scheduleConfig.month,
+                        day = scheduleConfig.day
                     )
+                    val scheduledNoteId = homeRepository.insertScheduledNote(scheduledNote)
+                    val ok = scheduleAlarmManager.schedule(scheduledNote.copy(id = scheduledNoteId))
+                    _scheduleResult.emit(ok)
+                } else {
+                    if (isPinnedNote) {
+                        notificationSender.sendPinnedNotification(
+                            notificationEntityId = notificationEntityId,
+                            pushNotificationText = pushNotificationText
+                        )
+                    } else {
+                        notificationSender.sendNotification(
+                            notificationEntityId = notificationEntityId,
+                            pushNotificationText = pushNotificationText
+                        )
+                    }
                 }
 
                 logPush(pushNotificationText, isPinnedNote)
 
                 launchInAppReview()
 
-                homeScreeState.copy(textFieldValue = "", isError = false)
+                // Dismiss the dialog after successful push/schedule
+                _dismissRequest.emit(Unit)
+
+                homeScreeState.copy(textFieldValue = "", isError = false, scheduleConfig = ScheduleConfig())
             }
         }
     }
@@ -82,12 +134,20 @@ class HomeViewModel @Inject constructor(
         homeScreeState = homeScreeState.copy(isPinnedNote = pinnedNoteUserDefault.getUserDefault())
     }
 
-    private suspend fun insertHistory(pushNotificationText: String, isPinnedNote: Boolean): Long {
+    private suspend fun insertHistory(
+        pushNotificationText: String,
+        isPinnedNote: Boolean,
+        isScheduled: Boolean,
+        timestamp: Long = System.currentTimeMillis(),
+        active: Boolean = true
+    ): Long {
         return homeRepository.insertHistory(
             HistoryEntity(
                 note = pushNotificationText,
-                time = System.currentTimeMillis(),
+                time = timestamp,
                 isPinnedNote = isPinnedNote,
+                isScheduledNote = isScheduled,
+                active = active,
             )
         )
     }
@@ -108,5 +168,33 @@ class HomeViewModel @Inject constructor(
             }
             eventLogger.log(Event.InAppReviewLaunched)
         }
+    }
+
+    fun onScheduleToggled(isScheduled: Boolean) {
+        homeScreeState = homeScreeState.copy(
+            scheduleConfig = homeScreeState.scheduleConfig.copy(isScheduled = isScheduled)
+        )
+    }
+
+    fun onScheduleTimeChanged(hour: Int, minute: Int) {
+        homeScreeState = homeScreeState.copy(
+            scheduleConfig = homeScreeState.scheduleConfig.copy(hour = hour, minute = minute)
+        )
+    }
+
+    fun onScheduleDateChanged(year: Int, month: Int, day: Int) {
+        homeScreeState = homeScreeState.copy(
+            scheduleConfig = homeScreeState.scheduleConfig.copy(year = year, month = month, day = day)
+        )
+    }
+
+    fun onRepeatModeChanged(repeatMode: RepeatMode) {
+        homeScreeState = homeScreeState.copy(
+            scheduleConfig = homeScreeState.scheduleConfig.copy(repeatMode = repeatMode)
+        )
+    }
+
+    fun clearSchedule() {
+        homeScreeState = homeScreeState.copy(scheduleConfig = ScheduleConfig())
     }
 }

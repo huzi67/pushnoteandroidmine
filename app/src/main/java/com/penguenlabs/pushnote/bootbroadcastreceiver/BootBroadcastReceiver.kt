@@ -6,10 +6,13 @@ import android.content.Intent
 import com.penguenlabs.pushnote.activenotification.ActiveNotificationManager
 import com.penguenlabs.pushnote.analytics.Event
 import com.penguenlabs.pushnote.analytics.EventLogger
+import com.penguenlabs.pushnote.data.local.dao.ScheduledNoteDao
+import com.penguenlabs.pushnote.features.schedule.ScheduleAlarmManager
 import com.penguenlabs.pushnote.pushnotification.sender.NotificationSender
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -29,6 +32,12 @@ class BootBroadcastReceiver : BroadcastReceiver() {
 
     @Inject
     lateinit var notificationSender: NotificationSender
+
+    @Inject
+    lateinit var scheduleAlarmManager: ScheduleAlarmManager
+
+    @Inject
+    lateinit var scheduledNoteDao: ScheduledNoteDao
 
     @Inject
     lateinit var eventLogger: EventLogger
@@ -70,6 +79,13 @@ class BootBroadcastReceiver : BroadcastReceiver() {
                             notificationEntityId = notification.id,
                             pushNotificationText = notification.note
                         )
+                    }
+                }
+
+                // Reschedule all active scheduled note alarms
+                scheduledNoteDao.getAllActive().firstOrNull()?.let { scheduledNotes ->
+                    scheduledNotes.forEach { scheduledNote ->
+                        scheduleAlarmManager.schedule(scheduledNote)
                     }
                 }
             }

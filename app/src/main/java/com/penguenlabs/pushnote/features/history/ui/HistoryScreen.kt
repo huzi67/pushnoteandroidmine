@@ -252,12 +252,21 @@ private fun HistoryItem(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(
-                text = historyEntity.note,
-                color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.titleLarge,
-                fontSize = 16.sp
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = historyEntity.note,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontSize = 16.sp
+                )
+                if (historyEntity.isScheduledNote) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "⏰",
+                        fontSize = 14.sp
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(2.dp))
 

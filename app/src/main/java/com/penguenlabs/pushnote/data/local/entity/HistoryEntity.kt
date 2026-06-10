@@ -10,5 +10,6 @@ data class HistoryEntity(
     val note: String,
     val time: Long,
     @ColumnInfo(name = "is_pinned_note") val isPinnedNote: Boolean,
+    @ColumnInfo(name = "is_scheduled_note") val isScheduledNote: Boolean = false,
     val active: Boolean = true
 )

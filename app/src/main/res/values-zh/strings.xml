@@ -1,6 +1,8 @@
 <resources>
     <string name="push_note">push note</string>
     <string name="push">发送</string>
+    <string name="schedule_set_success">闹钟设置成功</string>
+    <string name="schedule_set_failed">闹钟设置失败，请检查权限</string>
     <string name="main_notifications">主要通知</string>
     <string name="your_note_goes_here">您的笔记在这里</string>
     <string name="pinned_note">置顶笔记</string>
@@ -37,4 +39,18 @@
     <string name="please_turn_on_notifications">请打开通知</string>
     <string name="notification_permission_description">推送笔记允许您将笔记和提醒保存在通知栏中以便快速访问。要启用此功能，我们需要您的权限来向您的设备发送通知。</string>
     <string name="allow">允许</string>
+    <string name="schedule_note">定时笔记</string>
+    <string name="schedule_time">时间</string>
+    <string name="repeat_mode">重复</string>
+    <string name="repeat_none">不重复</string>
+    <string name="repeat_daily">每天</string>
+    <string name="repeat_weekly">每周</string>
+    <string name="repeat_monthly">每月</string>
+    <string name="select_time">选择时间</string>
+    <string name="confirm">确认</string>
+    <string name="cancel">取消</string>
+    <string name="clear_schedule">清除</string>
+    <string name="schedule_date">日期</string>
+    <string name="select_date">选择日期</string>
+    <string name="schedule_push">安排</string>
 </resources>

@@ -1,6 +1,8 @@
 <resources>
     <string name="push_note">push note</string>
     <string name="push">Push</string>
+    <string name="schedule_set_success">Alarm set successfully</string>
+    <string name="schedule_set_failed">Failed to set alarm</string>
     <string name="main_notifications">Main Notifications</string>
     <string name="your_note_goes_here">Your note goes here</string>
     <string name="pinned_note">Pinned note</string>
@@ -37,4 +39,18 @@
     <string name="please_turn_on_notifications">Please turn on notifications</string>
     <string name="notification_permission_description">push note allows you to keep your notes and reminders in the notification bar for quick access. To enable this feature, we need your permission to send notifications to your device.</string>
     <string name="allow">Allow</string>
+    <string name="schedule_note">Schedule Note</string>
+    <string name="schedule_time">Time</string>
+    <string name="repeat_mode">Repeat</string>
+    <string name="repeat_none">No repeat</string>
+    <string name="repeat_daily">Daily</string>
+    <string name="repeat_weekly">Weekly</string>
+    <string name="repeat_monthly">Monthly</string>
+    <string name="select_time">Select Time</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="clear_schedule">Clear</string>
+    <string name="schedule_date">Date</string>
+    <string name="select_date">Select Date</string>
+    <string name="schedule_push">Schedule</string>
 </resources>
