@@ -1,7 +1,5 @@
 package com.penguenlabs.pushnote.features.settings.ui
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,8 +32,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.penguenlabs.pushnote.BuildConfig
 import com.penguenlabs.pushnote.R
 import com.penguenlabs.pushnote.navigation.Destination
-import com.penguenlabs.pushnote.util.APP_URL
-import com.penguenlabs.pushnote.util.PENGUENLABS_MAIL
 import com.penguenlabs.pushnote.util.Screen
 
 @Composable
@@ -117,63 +113,6 @@ fun SettingsScreen(
                     isChecked = settingsScreenState.defaultPinnedNoteEnabled,
                     onCheckedChange = settingsViewModel::setPinnedNoteUserDefault
                 )
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    text = stringResource(id = R.string.support_settings),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    textAlign = TextAlign.Start
-                )
-                SettingItem(
-                    settingTitle = stringResource(id = R.string.share_this_application),
-                    settingDescription = stringResource(id = R.string.invite_your_friend_to_push_code),
-                    settingIcon = painterResource(id = R.drawable.ic_share)
-                ) {
-                    context.startActivity(
-                        Intent.createChooser(
-                            Intent().apply {
-                                action = Intent.ACTION_SEND
-                                putExtra(
-                                    Intent.EXTRA_TEXT,
-                                    "Heyy! Check out push note on Google Play; $APP_URL"
-                                )
-                                type = "text/plain"
-                            }, null
-                        )
-                    )
-
-                    settingsViewModel.onShareApplicationClick()
-                }
-                SettingItem(
-                    settingTitle = stringResource(id = R.string.report_a_problem),
-                    settingDescription = stringResource(id = R.string.help_us_make_push_note_better),
-                    settingIcon = painterResource(id = R.drawable.ic_report_problem)
-                ) {
-                    context.startActivity(
-                        Intent.createChooser(
-                            Intent(Intent.ACTION_SENDTO).apply {
-                                data = Uri.parse("mailto:$PENGUENLABS_MAIL")
-                            }, null
-                        )
-                    )
-
-                    settingsViewModel.onReportProblemClick()
-                }
-                SettingItem(
-                    settingTitle = stringResource(id = R.string.rate_us),
-                    settingDescription = stringResource(id = R.string.share_your_feedback_with_us),
-                    settingIcon = painterResource(id = R.drawable.ic_star)
-                ) {
-                    context.startActivity(
-                        Intent.createChooser(
-                            Intent(Intent.ACTION_VIEW, Uri.parse(APP_URL)), null
-                        )
-                    )
-
-                    settingsViewModel.onRateUsClick()
-                }
                 SettingItem(
                     settingTitle = stringResource(id = R.string.version, BuildConfig.VERSION_NAME),
                     settingDescription = stringResource(id = R.string.current_application_version),
