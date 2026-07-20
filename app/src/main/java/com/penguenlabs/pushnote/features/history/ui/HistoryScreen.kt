@@ -176,7 +176,10 @@ fun HistoryScreen(
                             historyEntity = historyEntity,
                             isSelectable = historyScreenState.isSelectable(),
                             isSelected = historyScreenState.isSelected(historyEntity),
+                            isScheduledActive = historyScreenState.activeScheduledNotes.any { it.note == historyEntity.note },
+                            scheduledRepeatMode = historyScreenState.activeScheduledNotes.find { it.note == historyEntity.note }?.repeatMode,
                             onSendClick = historyViewModel::sendNotification,
+                            onDeactivateClick = { historyViewModel.deactivateScheduledNote(historyEntity.note) },
                             onLongClick = {
                                 historyViewModel.onHistoryEntitySelect(isSelected = true, it)
                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -212,8 +215,11 @@ private fun HistoryItem(
     modifier: Modifier = Modifier,
     isSelectable: Boolean = false,
     isSelected: Boolean = false,
+    isScheduledActive: Boolean = false,
+    scheduledRepeatMode: String? = null,
     historyEntity: HistoryEntity,
     onSendClick: (note: String, isPinnedNote: Boolean) -> Unit = { _, _ -> },
+    onDeactivateClick: () -> Unit = {},
     onLongClick: (historyEntity: HistoryEntity) -> Unit = { },
     onCheckedChange: (isSelected: Boolean, historyEntity: HistoryEntity) -> Unit = { _, _ -> },
 ) {
@@ -261,10 +267,16 @@ private fun HistoryItem(
                 )
                 if (historyEntity.isScheduledNote) {
                     Spacer(modifier = Modifier.width(6.dp))
+                    val repeatLabel = when (scheduledRepeatMode) {
+                        "DAILY" -> "每天"
+                        "WEEKLY" -> "每周"
+                        "MONTHLY" -> "每月"
+                        else -> null
+                    }
                     Text(
-                        text = "⏰",
-                        fontSize = 14.sp,
-                        color = Color(0xFFE53935)
+                        text = if (isScheduledActive && repeatLabel != null) "⏰ $repeatLabel" else "⏰",
+                        fontSize = 12.sp,
+                        color = if (isScheduledActive) Color(0xFF4CAF50) else Color(0xFFE53935)
                     )
                 }
             }
@@ -276,6 +288,14 @@ private fun HistoryItem(
                 color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.bodyMedium
             )
+        }
+        if (isScheduledActive) {
+            Box(
+                modifier = modifier.size(36.dp).clickable { onDeactivateClick() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text("✕", fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
+            }
         }
         Box(
             modifier = modifier

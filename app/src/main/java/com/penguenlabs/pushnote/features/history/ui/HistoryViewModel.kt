@@ -8,8 +8,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.penguenlabs.pushnote.analytics.Event
 import com.penguenlabs.pushnote.analytics.EventLogger
+import com.penguenlabs.pushnote.data.local.dao.ScheduledNoteDao
 import com.penguenlabs.pushnote.data.local.entity.HistoryEntity
+import com.penguenlabs.pushnote.data.local.entity.ScheduledNoteEntity
 import com.penguenlabs.pushnote.features.history.data.HistoryRepository
+import com.penguenlabs.pushnote.features.schedule.ScheduleAlarmManager
 import com.penguenlabs.pushnote.pushnotification.sender.NotificationSender
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
@@ -22,7 +25,9 @@ import javax.inject.Inject
 class HistoryViewModel @Inject constructor(
     private val historyRepository: HistoryRepository,
     private val notificationSender: NotificationSender,
-    private val eventLogger: EventLogger
+    private val eventLogger: EventLogger,
+    private val scheduledNoteDao: ScheduledNoteDao,
+    private val scheduleAlarmManager: ScheduleAlarmManager
 ) : ViewModel() {
 
     var historyScreenState by mutableStateOf(HistoryScreenState())
@@ -31,6 +36,13 @@ class HistoryViewModel @Inject constructor(
     @OptIn(FlowPreview::class)
     fun getAllHistory() {
         var isFirstCollect = true
+
+        viewModelScope.launch {
+            // Load active scheduled notes
+            scheduledNoteDao.getAllActive().collect { activeScheduled ->
+                historyScreenState = historyScreenState.copy(activeScheduledNotes = activeScheduled)
+            }
+        }
 
         viewModelScope.launch {
             historyRepository.getAllHistory().debounce {
@@ -93,5 +105,15 @@ class HistoryViewModel @Inject constructor(
     fun onDeselectAllClick() {
         historyScreenState = historyScreenState.copy(selectedHistoryEntities = emptyList())
         eventLogger.log(Event.HistoryDeselectAll)
+    }
+
+    fun deactivateScheduledNote(note: String) {
+        viewModelScope.launch {
+            val active = historyScreenState.activeScheduledNotes.find { it.note == note }
+            if (active != null) {
+                scheduledNoteDao.deactivate(active.id)
+                scheduleAlarmManager.cancel(active.id)
+            }
+        }
     }
 }
