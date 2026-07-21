@@ -2,10 +2,18 @@ package com.penguenlabs.pushnote.features.history.ui
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.ExperimentalMaterialApi
@@ -21,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,6 +37,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.penguenlabs.pushnote.R
 import com.penguenlabs.pushnote.data.local.entity.HistoryEntity
 import com.penguenlabs.pushnote.navigation.Destination
+import com.penguenlabs.pushnote.theme.NeuCard
+import com.penguenlabs.pushnote.theme.NeuIconButton
+import com.penguenlabs.pushnote.theme.NeuTopBar
+import com.penguenlabs.pushnote.theme.neuGreen
+import com.penguenlabs.pushnote.theme.neuRed
 import com.penguenlabs.pushnote.util.Screen
 import com.penguenlabs.pushnote.util.TimeFormat
 
@@ -44,135 +58,59 @@ fun HistoryScreen(
     Screen(context = context, destination = Destination.History) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(modifier = Modifier.fillMaxSize()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    if (historyScreenState.isSelectable().not()) {
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = historyScreenState.isSelectable().not()
-                        ) {
-                            Text(
-                                modifier = Modifier.fillMaxWidth(),
-                                text = stringResource(id = R.string.history),
-                                style = MaterialTheme.typography.headlineSmall,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clickable { onBackPressClick() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                modifier = Modifier.size(24.dp),
-                                painter = painterResource(id = R.drawable.ic_back),
-                                contentDescription = stringResource(id = R.string.back),
-                                tint = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
+                NeuTopBar(
+                    title = stringResource(id = R.string.history),
+                    onBackClick = onBackPressClick,
+                    actions = {
                         AnimatedVisibility(
                             visible = historyScreenState.isSelectable(),
                             enter = fadeIn(),
                             exit = fadeOut()
                         ) {
-                            Text(
-                                modifier = Modifier.padding(start = 6.dp),
-                                text = historyScreenState.selectedHistoryEntityCountString(),
-                                style = MaterialTheme.typography.titleLarge,
-                                fontSize = 16.sp,
-                                color = MaterialTheme.colorScheme.onBackground,
-                            )
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                        AnimatedVisibility(
-                            visible = historyScreenState.isSelectable(),
-                            enter = fadeIn(),
-                            exit = fadeOut()
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clickable {
+                            Row {
+                                NeuIconButton(
+                                    onClick = {
                                         historyViewModel.onDeleteAllClick(
                                             historyScreenState.selectedHistoryEntities
                                         )
-                                        hapticFeedback.performHapticFeedback(
-                                            HapticFeedbackType.LongPress
-                                        )
-                                    }, contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    modifier = Modifier.size(24.dp),
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    },
                                     painter = painterResource(id = R.drawable.ic_delete_forever),
-                                    contentDescription = stringResource(id = R.string.back),
-                                    tint = MaterialTheme.colorScheme.onBackground
+                                    contentDescription = stringResource(id = R.string.delete),
+                                    backgroundColor = neuRed,
+                                    contentColor = Color.Black
                                 )
-                            }
-                        }
-                        AnimatedVisibility(
-                            visible = historyScreenState.isSelectable(),
-                            enter = fadeIn(),
-                            exit = fadeOut()
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clickable {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                NeuIconButton(
+                                    onClick = {
                                         historyViewModel.onSelectAllClick()
-                                        hapticFeedback.performHapticFeedback(
-                                            HapticFeedbackType.LongPress
-                                        )
-                                    }, contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    modifier = Modifier.size(24.dp),
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    },
                                     painter = painterResource(id = R.drawable.ic_select_all),
-                                    contentDescription = stringResource(id = R.string.select_all),
-                                    tint = MaterialTheme.colorScheme.onBackground
+                                    contentDescription = stringResource(id = R.string.select_all)
                                 )
-                            }
-                        }
-                        AnimatedVisibility(
-                            visible = historyScreenState.isSelectable(),
-                            enter = fadeIn(),
-                            exit = fadeOut()
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clickable {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                NeuIconButton(
+                                    onClick = {
                                         historyViewModel.onDeselectAllClick()
-                                        hapticFeedback.performHapticFeedback(
-                                            HapticFeedbackType.LongPress
-                                        )
-                                    }, contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    modifier = Modifier.size(24.dp),
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    },
                                     painter = painterResource(id = R.drawable.ic_close),
-                                    contentDescription = stringResource(id = R.string.close),
-                                    tint = MaterialTheme.colorScheme.onBackground
+                                    contentDescription = stringResource(id = R.string.close)
                                 )
                             }
                         }
                     }
-                }
-                LazyColumn {
+                )
+                LazyColumn(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     items(
                         items = historyScreenState.historyItems,
                         key = { it.id }) { historyEntity ->
-                        HistoryItem(modifier = Modifier.animateItemPlacement(),
+                        HistoryItem(
+                            modifier = Modifier.animateItemPlacement(),
                             historyEntity = historyEntity,
                             isSelectable = historyScreenState.isSelectable(),
                             isSelected = historyScreenState.isSelected(historyEntity),
@@ -192,13 +130,16 @@ fun HistoryScreen(
                 }
             }
             AnimatedVisibility(
-                visible = historyScreenState.hasHistory().not(), enter = fadeIn(), exit = fadeOut()
+                visible = historyScreenState.hasHistory().not(),
+                enter = fadeIn(),
+                exit = fadeOut()
             ) {
                 Text(
                     text = stringResource(id = R.string.no_history),
                     color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.titleLarge,
-                    fontSize = 16.sp,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Black
                 )
             }
         }
@@ -223,91 +164,113 @@ private fun HistoryItem(
     onLongClick: (historyEntity: HistoryEntity) -> Unit = { },
     onCheckedChange: (isSelected: Boolean, historyEntity: HistoryEntity) -> Unit = { _, _ -> },
 ) {
-    Row(
+    val cardBackground = if (isSelected) MaterialTheme.colorScheme.secondaryContainer
+    else MaterialTheme.colorScheme.surface
+
+    NeuCard(
         modifier = modifier
             .fillMaxWidth()
-            .combinedClickable(onClick = {
-                if (isSelectable) {
-                    onCheckedChange(isSelected.not(), historyEntity)
-                }
-            }, onLongClick = {
-                if (isSelectable.not()) {
-                    onLongClick(historyEntity)
-                }
-            })
-            .background(if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
-            .padding(start = 16.dp, top = 16.dp, bottom = 16.dp)
-            .height(50.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        AnimatedVisibility(
-            visible = isSelectable, enter = fadeIn() + expandIn(), exit = fadeOut() + shrinkOut()
-        ) {
-            CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
-                val hapticFeedback = LocalHapticFeedback.current
-
-                Checkbox(modifier = Modifier.padding(end = 16.dp),
-                    checked = isSelected,
-                    onCheckedChange = {
-                        onCheckedChange(it, historyEntity)
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                    })
-            }
-        }
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = historyEntity.note,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontSize = 16.sp
-                )
-                if (historyEntity.isScheduledNote) {
-                    Spacer(modifier = Modifier.width(6.dp))
-                    val repeatLabel = when (scheduledRepeatMode) {
-                        "DAILY" -> "每天"
-                        "WEEKLY" -> "每周"
-                        "MONTHLY" -> "每月"
-                        else -> null
+            .combinedClickable(
+                onClick = {
+                    if (isSelectable) {
+                        onCheckedChange(isSelected.not(), historyEntity)
                     }
-                    Text(
-                        text = if (isScheduledActive && repeatLabel != null) "⏰ $repeatLabel" else "⏰",
-                        fontSize = 12.sp,
-                        color = if (isScheduledActive) Color(0xFF4CAF50) else Color(0xFFE53935)
+                },
+                onLongClick = {
+                    if (isSelectable.not()) {
+                        onLongClick(historyEntity)
+                    }
+                }
+            ),
+        backgroundColor = cardBackground
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 12.dp, top = 12.dp, bottom = 12.dp, end = 4.dp)
+                .height(54.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AnimatedVisibility(
+                visible = isSelectable,
+                enter = fadeIn() + expandIn(),
+                exit = fadeOut() + shrinkOut()
+            ) {
+                CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
+                    val hapticFeedback = LocalHapticFeedback.current
+
+                    Checkbox(
+                        modifier = Modifier.padding(end = 12.dp),
+                        checked = isSelected,
+                        onCheckedChange = {
+                            onCheckedChange(it, historyEntity)
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                        },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = MaterialTheme.colorScheme.secondary,
+                            uncheckedColor = MaterialTheme.colorScheme.outline,
+                            checkmarkColor = Color.Black
+                        )
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            Text(
-                text = TimeFormat.format(historyEntity.time),
-                color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-        if (isScheduledActive) {
-            Box(
-                modifier = modifier.size(36.dp).clickable { onDeactivateClick() },
-                contentAlignment = Alignment.Center
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center,
             ) {
-                Text("✕", fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = historyEntity.note,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Black
+                    )
+                    if (historyEntity.isScheduledNote) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        val repeatLabel = when (scheduledRepeatMode) {
+                            "DAILY" -> "每天"
+                            "WEEKLY" -> "每周"
+                            "MONTHLY" -> "每月"
+                            else -> null
+                        }
+                        Text(
+                            text = if (isScheduledActive && repeatLabel != null) "⏰ $repeatLabel" else "⏰",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isScheduledActive) neuGreen else neuRed
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                Text(
+                    text = TimeFormat.format(historyEntity.time),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
+                )
             }
-        }
-        Box(
-            modifier = modifier
-                .size(48.dp)
-                .clickable { onSendClick(historyEntity.note, historyEntity.isPinnedNote) },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                modifier = Modifier.size(24.dp),
+            if (isScheduledActive) {
+                NeuIconButton(
+                    onClick = onDeactivateClick,
+                    modifier = Modifier.size(42.dp),
+                    painter = null,
+                    contentDescription = stringResource(id = R.string.close),
+                    backgroundColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                ) {
+                    Text("✕", fontSize = 14.sp, fontWeight = FontWeight.Black)
+                }
+            }
+            NeuIconButton(
+                onClick = { onSendClick(historyEntity.note, historyEntity.isPinnedNote) },
+                modifier = Modifier.size(42.dp),
                 painter = painterResource(id = R.drawable.ic_send),
                 contentDescription = stringResource(id = R.string.push),
-                tint = MaterialTheme.colorScheme.onBackground
+                backgroundColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.Black
             )
         }
     }

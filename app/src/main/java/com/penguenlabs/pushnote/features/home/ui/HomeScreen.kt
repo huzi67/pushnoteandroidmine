@@ -14,27 +14,24 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -48,12 +45,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -68,12 +66,19 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.mertceyhan.compose.inappreviews.rememberInAppReviewManager
 import com.penguenlabs.pushnote.R
 import com.penguenlabs.pushnote.navigation.Destination
+import com.penguenlabs.pushnote.theme.NeuButton
+import com.penguenlabs.pushnote.theme.NeuCard
+import com.penguenlabs.pushnote.theme.NeuFilterChip
+import com.penguenlabs.pushnote.theme.NeuIconButton
+import com.penguenlabs.pushnote.theme.NeuOutlinedButton
+import com.penguenlabs.pushnote.theme.NeuTextField
+import com.penguenlabs.pushnote.theme.neuRed
 import com.penguenlabs.pushnote.util.Screen
 import com.penguenlabs.pushnote.util.findActivity
 import kotlinx.coroutines.delay
 
 private const val FOCUS_REQUEST_DELAY: Long = 300
-private val SCHEDULE_RED = Color(0xFFE53935)
+private val SCHEDULE_RED = neuRed
 
 private val repeatChips = listOf(
     RepeatMode.NONE to R.string.repeat_none,
@@ -120,198 +125,269 @@ fun HomeScreen(
             var showTimePicker by remember { mutableStateOf(false) }
             var showDatePicker by remember { mutableStateOf(false) }
 
-            Column(
+            NeuCard(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(color = MaterialTheme.colorScheme.background)
-                    .padding(24.dp)
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                backgroundColor = MaterialTheme.colorScheme.background,
+                borderColor = MaterialTheme.colorScheme.outline,
+                shadowColor = MaterialTheme.colorScheme.outline
             ) {
-                // Title
-                Text(
-                    text = if (showScheduleConfig) stringResource(id = R.string.schedule_note)
-                    else stringResource(id = R.string.push_note),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // TextField — always visible, keeps focus
-                OutlinedTextField(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .focusRequester(textFieldFocusRequester),
-                    value = homeScreeState.textFieldValue,
-                    onValueChange = homeViewModel::onTextFieldValueChange,
-                    placeholder = { Text(stringResource(id = R.string.your_note_goes_here)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        imeAction = ImeAction.Done, capitalization = KeyboardCapitalization.Sentences),
-                    keyboardActions = KeyboardActions(onDone = {
-                        homeViewModel.sendNotification(homeScreeState.textFieldValue, true)
-                    }),
-                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = MaterialTheme.colorScheme.onBackground),
-                    isError = homeScreeState.isError,
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Alarm icon — toggle schedule panel
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "⏰", fontSize = 20.sp,
-                        modifier = Modifier.clickable {
-                            if (showScheduleConfig) {
-                                // Second click: cancel schedule, restore
-                                homeViewModel.clearSchedule()
-                                showScheduleConfig = false
-                            } else {
-                                // First click: open schedule config, default to now if not yet configured
-                                val hasExisting = homeScreeState.scheduleConfig.isScheduled
-                                val now = java.util.Calendar.getInstance()
-                                cfgHour = if (hasExisting) homeScreeState.scheduleConfig.hour else now.get(java.util.Calendar.HOUR_OF_DAY)
-                                cfgMinute = if (hasExisting) homeScreeState.scheduleConfig.minute else now.get(java.util.Calendar.MINUTE)
-                                cfgRepeat = homeScreeState.scheduleConfig.repeatMode
-                                cfgYear = if (hasExisting) homeScreeState.scheduleConfig.year else now.get(java.util.Calendar.YEAR)
-                                cfgMonth = if (hasExisting) homeScreeState.scheduleConfig.month else now.get(java.util.Calendar.MONTH)
-                                cfgDay = if (hasExisting) homeScreeState.scheduleConfig.day else now.get(java.util.Calendar.DAY_OF_MONTH)
-                                cfgDayOfWeek = homeScreeState.scheduleConfig.dayOfWeek
-                                showScheduleConfig = true
-                            }
-                        }.padding(4.dp),
-                        color = if (showScheduleConfig || homeScreeState.scheduleConfig.isScheduled) SCHEDULE_RED
-                            else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f))
-                }
-
-                // Schedule config — expand first, then content slides in
-                AnimatedVisibility(
-                    visible = showScheduleConfig,
-                    enter = expandVertically(tween(280)) +
-                        fadeIn(tween(300, delayMillis = 180)) +
-                        slideInVertically(tween(300, delayMillis = 180)) { it / 6 },
-                    exit = fadeOut(tween(150)) +
-                        slideOutVertically(tween(150)) { -it / 6 } +
-                        shrinkVertically(tween(220, delayMillis = 80))
+                        .padding(24.dp)
                 ) {
-                    Column {
-                        Spacer(modifier = Modifier.height(6.dp))
+                    // Title
+                    Text(
+                        text = if (showScheduleConfig) stringResource(id = R.string.schedule_note)
+                        else stringResource(id = R.string.push_note),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                        // Date + time buttons — side by side when both shown
-                        if (cfgRepeat == RepeatMode.NONE || cfgRepeat == RepeatMode.MONTHLY) {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                val dateText = String.format("%02d-%02d", (cfgMonth ?: 0) + 1, cfgDay ?: 1)
-                                OutlinedButton(onClick = { showDatePicker = true },
-                                    modifier = Modifier.weight(1f).height(36.dp)) {
-                                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                                        Text(dateText, fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground)
+                    // TextField
+                    NeuTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(textFieldFocusRequester),
+                        value = homeScreeState.textFieldValue,
+                        onValueChange = homeViewModel::onTextFieldValueChange,
+                        placeholder = {
+                            Text(
+                                stringResource(id = R.string.your_note_goes_here),
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = ImeAction.Done,
+                            capitalization = KeyboardCapitalization.Sentences
+                        ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            homeViewModel.sendNotification(homeScreeState.textFieldValue, true)
+                        }),
+                        isError = homeScreeState.isError
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Alarm icon — toggle schedule panel
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        NeuIconButton(
+                            onClick = {
+                                if (showScheduleConfig) {
+                                    homeViewModel.clearSchedule()
+                                    showScheduleConfig = false
+                                } else {
+                                    val hasExisting = homeScreeState.scheduleConfig.isScheduled
+                                    val now = java.util.Calendar.getInstance()
+                                    cfgHour = if (hasExisting) homeScreeState.scheduleConfig.hour else now.get(java.util.Calendar.HOUR_OF_DAY)
+                                    cfgMinute = if (hasExisting) homeScreeState.scheduleConfig.minute else now.get(java.util.Calendar.MINUTE)
+                                    cfgRepeat = homeScreeState.scheduleConfig.repeatMode
+                                    cfgYear = if (hasExisting) homeScreeState.scheduleConfig.year else now.get(java.util.Calendar.YEAR)
+                                    cfgMonth = if (hasExisting) homeScreeState.scheduleConfig.month else now.get(java.util.Calendar.MONTH)
+                                    cfgDay = if (hasExisting) homeScreeState.scheduleConfig.day else now.get(java.util.Calendar.DAY_OF_MONTH)
+                                    cfgDayOfWeek = homeScreeState.scheduleConfig.dayOfWeek
+                                    showScheduleConfig = true
+                                }
+                            },
+                            backgroundColor = if (showScheduleConfig || homeScreeState.scheduleConfig.isScheduled) SCHEDULE_RED
+                            else MaterialTheme.colorScheme.surface,
+                            contentColor = if (showScheduleConfig || homeScreeState.scheduleConfig.isScheduled) Color.Black
+                            else MaterialTheme.colorScheme.onBackground,
+                            borderColor = MaterialTheme.colorScheme.outline
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_alarm),
+                                contentDescription = stringResource(id = R.string.schedule_note),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(id = R.string.schedule_note),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (showScheduleConfig || homeScreeState.scheduleConfig.isScheduled) SCHEDULE_RED
+                            else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // Schedule config — expand first, then content slides in
+                    AnimatedVisibility(
+                        visible = showScheduleConfig,
+                        enter = expandVertically(tween(280)) +
+                            fadeIn(tween(300, delayMillis = 180)) +
+                            slideInVertically(tween(300, delayMillis = 180)) { it / 6 },
+                        exit = fadeOut(tween(150)) +
+                            slideOutVertically(tween(150)) { -it / 6 } +
+                            shrinkVertically(tween(220, delayMillis = 80))
+                    ) {
+                        Column {
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Date + time buttons
+                            if (cfgRepeat == RepeatMode.NONE || cfgRepeat == RepeatMode.MONTHLY) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    val dateText = String.format("%02d-%02d", (cfgMonth ?: 0) + 1, cfgDay ?: 1)
+                                    NeuOutlinedButton(
+                                        onClick = { showDatePicker = true },
+                                        modifier = Modifier.weight(1f).height(40.dp),
+                                        contentPadding = PaddingValues(0.dp)
+                                    ) {
+                                        Text(
+                                            dateText,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onBackground
+                                        )
+                                    }
+                                    val timeText = String.format("%02d:%02d", cfgHour, cfgMinute)
+                                    NeuOutlinedButton(
+                                        onClick = { showTimePicker = true },
+                                        modifier = Modifier.weight(1f).height(40.dp),
+                                        contentPadding = PaddingValues(0.dp)
+                                    ) {
+                                        Text(
+                                            timeText,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onBackground
+                                        )
                                     }
                                 }
+                            } else {
                                 val timeText = String.format("%02d:%02d", cfgHour, cfgMinute)
-                                OutlinedButton(onClick = { showTimePicker = true },
-                                    modifier = Modifier.weight(1f).height(36.dp)) {
-                                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                                        Text(timeText, fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground)
-                                    }
+                                NeuOutlinedButton(
+                                    onClick = { showTimePicker = true },
+                                    modifier = Modifier.fillMaxWidth().height(40.dp),
+                                    contentPadding = PaddingValues(0.dp)
+                                ) {
+                                    Text(
+                                        timeText,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onBackground
+                                    )
                                 }
                             }
-                        } else {
-                            val timeText = String.format("%02d:%02d", cfgHour, cfgMinute)
-                            OutlinedButton(onClick = { showTimePicker = true },
-                                modifier = Modifier.fillMaxWidth().height(36.dp)) {
-                                Text(timeText, fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground)
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Repeat chips
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                repeatChips.forEach { (mode, label) ->
+                                    NeuFilterChip(
+                                        selected = cfgRepeat == mode,
+                                        onClick = { cfgRepeat = mode },
+                                        label = { Text(stringResource(label), fontSize = 11.sp) },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+
+                            // Weekly day-of-week
+                            if (cfgRepeat == RepeatMode.WEEKLY) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    listOf("一", "二", "三", "四", "五", "六", "日").forEachIndexed { i, l ->
+                                        NeuFilterChip(
+                                            selected = cfgDayOfWeek == i,
+                                            onClick = { cfgDayOfWeek = i },
+                                            label = { Text(l, fontSize = 11.sp) },
+                                            modifier = Modifier.height(30.dp).weight(1f)
+                                        )
+                                    }
+                                }
                             }
                         }
-                        Spacer(modifier = Modifier.height(6.dp))
+                    }
 
-                        // Repeat chips — one compact row
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            repeatChips.forEach { (mode, label) ->
-                                FilterChip(
-                                    selected = cfgRepeat == mode,
-                                    onClick = { cfgRepeat = mode },
-                                    label = { Text(stringResource(label), fontSize = 12.sp) },
-                                    modifier = Modifier.height(26.dp)
+                    // Schedule info (always visible when configured)
+                    if (homeScreeState.scheduleConfig.isScheduled) {
+                        val sc = homeScreeState.scheduleConfig
+                        val timeText = String.format("%02d:%02d", sc.hour, sc.minute)
+                        val datePart = if (sc.year != null && sc.month != null && sc.day != null)
+                            String.format("%04d-%02d-%02d  ", sc.year, sc.month + 1, sc.day) else ""
+                        val repeatText = when (sc.repeatMode) {
+                            RepeatMode.NONE -> stringResource(id = R.string.repeat_none)
+                            RepeatMode.DAILY -> stringResource(id = R.string.repeat_daily)
+                            RepeatMode.WEEKLY -> stringResource(id = R.string.repeat_weekly)
+                            RepeatMode.MONTHLY -> stringResource(id = R.string.repeat_monthly)
+                        }
+                        Text(
+                            text = "$datePart$timeText  $repeatText",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SCHEDULE_RED,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(start = 4.dp, top = 6.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Primary button
+                    NeuButton(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        onClick = {
+                            if (showScheduleConfig) {
+                                homeViewModel.onScheduleTimeChanged(cfgHour, cfgMinute)
+                                val y = cfgYear; val m = cfgMonth; val d = cfgDay
+                                if (y != null && m != null && d != null) homeViewModel.onScheduleDateChanged(y, m, d)
+                                cfgDayOfWeek?.let { homeViewModel.onScheduleDayOfWeekChanged(it) }
+                                homeViewModel.onRepeatModeChanged(cfgRepeat)
+                                homeViewModel.onScheduleToggled(true)
+                                showScheduleConfig = false
+                            } else if (notificationPermissionState?.status?.isGranted?.not() == true) {
+                                onNotificationPermissionNeed(homeScreeState.textFieldValue)
+                            } else {
+                                homeViewModel.sendNotification(
+                                    pushNotificationText = homeScreeState.textFieldValue,
+                                    isPinnedNote = true
                                 )
                             }
                         }
-
-                        // Weekly day-of-week — smaller, tighter
-                        if (cfgRepeat == RepeatMode.WEEKLY) {
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                                listOf("一", "二", "三", "四", "五", "六", "日").forEachIndexed { i, l ->
-                                    FilterChip(selected = cfgDayOfWeek == i,
-                                        onClick = { cfgDayOfWeek = i },
-                                        label = { Text(l, fontSize = 11.sp) },
-                                        modifier = Modifier.height(24.dp).weight(1f))
-                                }
-                            }
-                        }
+                    ) {
+                        Text(
+                            text = if (showScheduleConfig) stringResource(id = R.string.confirm)
+                            else if (homeScreeState.scheduleConfig.isScheduled) stringResource(id = R.string.schedule_push)
+                            else stringResource(id = R.string.push),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 16.sp
+                        )
                     }
-                }
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                // Schedule info (always visible when configured)
-                if (homeScreeState.scheduleConfig.isScheduled) {
-                    val sc = homeScreeState.scheduleConfig
-                    val timeText = String.format("%02d:%02d", sc.hour, sc.minute)
-                    val datePart = if (sc.year != null && sc.month != null && sc.day != null)
-                        String.format("%04d-%02d-%02d  ", sc.year, sc.month + 1, sc.day) else ""
-                    val repeatText = when (sc.repeatMode) {
-                        RepeatMode.NONE -> stringResource(id = R.string.repeat_none)
-                        RepeatMode.DAILY -> stringResource(id = R.string.repeat_daily)
-                        RepeatMode.WEEKLY -> stringResource(id = R.string.repeat_weekly)
-                        RepeatMode.MONTHLY -> stringResource(id = R.string.repeat_monthly)
+                    // Secondary button
+                    NeuOutlinedButton(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        onClick = onSettingsButtonClick
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.menu),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 16.sp
+                        )
                     }
-                    Text(
-                        text = "$datePart$timeText  $repeatText",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 4.dp, top = 4.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Primary button
-                Button(
-                    modifier = Modifier.fillMaxWidth().height(45.dp),
-                    onClick = {
-                        if (showScheduleConfig) {
-                            // Save schedule config from local state
-                            homeViewModel.onScheduleTimeChanged(cfgHour, cfgMinute)
-                            val y = cfgYear; val m = cfgMonth; val d = cfgDay
-                            if (y != null && m != null && d != null) homeViewModel.onScheduleDateChanged(y, m, d)
-                            cfgDayOfWeek?.let { homeViewModel.onScheduleDayOfWeekChanged(it) }
-                            homeViewModel.onRepeatModeChanged(cfgRepeat)
-                            homeViewModel.onScheduleToggled(true)
-                            showScheduleConfig = false
-                        } else if (notificationPermissionState?.status?.isGranted?.not() == true) {
-                            onNotificationPermissionNeed(homeScreeState.textFieldValue)
-                        } else {
-                            homeViewModel.sendNotification(
-                                pushNotificationText = homeScreeState.textFieldValue,
-                                isPinnedNote = true
-                            )
-                        }
-                    },
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = if (showScheduleConfig) stringResource(id = R.string.confirm)
-                        else if (homeScreeState.scheduleConfig.isScheduled) stringResource(id = R.string.schedule_push)
-                        else stringResource(id = R.string.push),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Secondary button
-                TextButton(
-                    modifier = Modifier.fillMaxWidth().height(45.dp),
-                    onClick = onSettingsButtonClick,
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.menu),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
                 }
             }
 
@@ -323,22 +399,46 @@ fun HomeScreen(
                         enter = expandVertically(tween(250)) + fadeIn(tween(250)),
                         exit = fadeOut()
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(24.dp))
-                                .background(color = MaterialTheme.colorScheme.background)
-                                .padding(16.dp)
+                        NeuCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            backgroundColor = MaterialTheme.colorScheme.background
                         ) {
-                            val tp = rememberTimePickerState(cfgHour, cfgMinute, true)
-                            TimePicker(state = tp)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                TextButton(onClick = { showTimePicker = false }) {
-                                    Text(stringResource(id = R.string.cancel))
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Button(onClick = { cfgHour = tp.hour; cfgMinute = tp.minute; showTimePicker = false }) {
-                                    Text(stringResource(id = R.string.confirm))
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            ) {
+                                val tp = rememberTimePickerState(cfgHour, cfgMinute, true)
+                                TimePicker(state = tp)
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    TextButton(onClick = { showTimePicker = false }) {
+                                        Text(
+                                            stringResource(id = R.string.cancel),
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onBackground
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    NeuButton(
+                                        modifier = Modifier
+                                            .width(90.dp)
+                                            .height(40.dp),
+                                        onClick = {
+                                            cfgHour = tp.hour
+                                            cfgMinute = tp.minute
+                                            showTimePicker = false
+                                        }
+                                    ) {
+                                        Text(
+                                            stringResource(id = R.string.confirm),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -346,7 +446,7 @@ fun HomeScreen(
                 }
             }
 
-            // Date picker dialog — concise, animated
+            // Date picker dialog
             if (showDatePicker) {
                 val init = java.util.Calendar.getInstance().apply {
                     set(java.util.Calendar.YEAR, cfgYear ?: 2026)
@@ -372,19 +472,34 @@ fun HomeScreen(
                     onDismissRequest = { showDatePicker = false },
                     colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
                     confirmButton = {
-                        Button(onClick = {
-                            dp.selectedDateMillis?.let {
-                                val c = java.util.Calendar.getInstance().apply { timeInMillis = it }
-                                cfgYear = c.get(java.util.Calendar.YEAR)
-                                cfgMonth = c.get(java.util.Calendar.MONTH)
-                                cfgDay = c.get(java.util.Calendar.DAY_OF_MONTH)
+                        NeuButton(
+                            modifier = Modifier
+                                .width(90.dp)
+                                .height(40.dp),
+                            onClick = {
+                                dp.selectedDateMillis?.let {
+                                    val c = java.util.Calendar.getInstance().apply { timeInMillis = it }
+                                    cfgYear = c.get(java.util.Calendar.YEAR)
+                                    cfgMonth = c.get(java.util.Calendar.MONTH)
+                                    cfgDay = c.get(java.util.Calendar.DAY_OF_MONTH)
+                                }
+                                showDatePicker = false
                             }
-                            showDatePicker = false
-                        }) { Text(stringResource(id = R.string.confirm)) }
+                        ) {
+                            Text(
+                                stringResource(id = R.string.confirm),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        }
                     },
                     dismissButton = {
                         TextButton(onClick = { showDatePicker = false }) {
-                            Text(stringResource(id = R.string.cancel))
+                            Text(
+                                stringResource(id = R.string.cancel),
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
                         }
                     }
                 ) {

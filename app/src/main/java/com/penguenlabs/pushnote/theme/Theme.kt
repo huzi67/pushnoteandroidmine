@@ -1,105 +1,71 @@
 package com.penguenlabs.pushnote.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-
 
 private val lightColorScheme = lightColorScheme(
-    primary = md_theme_light_primary,
-    primaryContainer = md_theme_light_primaryContainer,
-    onPrimary = md_theme_light_onPrimary,
-    onPrimaryContainer = md_theme_light_onPrimaryContainer,
-    secondary = md_theme_light_secondary,
-    secondaryContainer = md_theme_light_secondaryContainer,
-    onSecondary = md_theme_light_onSecondary,
-    onSecondaryContainer = md_theme_light_onSecondaryContainer,
-    tertiary = md_theme_light_tertiary,
-    tertiaryContainer = md_theme_light_tertiaryContainer,
-    onTertiary = md_theme_light_onTertiary,
-    onTertiaryContainer = md_theme_light_onTertiaryContainer,
-    error = md_theme_light_error,
-    errorContainer = md_theme_light_errorContainer,
-    onError = md_theme_light_onError,
-    onErrorContainer = md_theme_light_onErrorContainer,
-    outline = md_theme_light_outline,
-    background = md_theme_light_background,
-    onBackground = md_theme_light_onBackground,
-    surface = md_theme_light_surface,
-    onSurface = md_theme_light_onSurface,
-    surfaceVariant = md_theme_light_surfaceVariant,
-    onSurfaceVariant = md_theme_light_onSurfaceVariant,
-    inverseSurface = md_theme_light_inverseSurface,
-    inverseOnSurface = md_theme_light_inverseOnSurface,
-    inversePrimary = md_theme_light_inversePrimary,
-    surfaceTint = md_theme_light_surfaceTint,
-    outlineVariant = md_theme_light_outlineVariant,
-    scrim = md_theme_light_scrim,
+    primary = neuLightPrimary,
+    primaryContainer = neuLightPrimaryContainer,
+    onPrimary = neuLightOnPrimary,
+    secondary = neuLightSecondary,
+    secondaryContainer = neuLightSecondaryContainer,
+    onSecondary = neuLightOnSecondary,
+    tertiary = neuLightTertiary,
+    tertiaryContainer = neuLightTertiaryContainer,
+    onTertiary = neuLightOnTertiary,
+    error = neuLightError,
+    errorContainer = neuLightErrorContainer,
+    onError = neuLightOnError,
+    onErrorContainer = neuLightOnError,
+    background = neuLightBackground,
+    onBackground = neuLightOnBackground,
+    surface = neuLightSurface,
+    onSurface = neuLightOnSurface,
+    surfaceVariant = neuLightSurfaceVariant,
+    onSurfaceVariant = neuLightOnSurfaceVariant,
+    outline = neuLightOutline,
+    outlineVariant = neuLightOutlineVariant,
+    inverseSurface = neuBlack,
+    inverseOnSurface = neuWhite,
+    inversePrimary = neuLightPrimary,
+    scrim = neuShadow
 )
-
 
 private val darkColorScheme = darkColorScheme(
-    primary = md_theme_dark_primary,
-    primaryContainer = md_theme_dark_primaryContainer,
-    onPrimary = md_theme_dark_onPrimary,
-    onPrimaryContainer = md_theme_dark_onPrimaryContainer,
-    secondary = md_theme_dark_secondary,
-    secondaryContainer = md_theme_dark_secondaryContainer,
-    onSecondary = md_theme_dark_onSecondary,
-    onSecondaryContainer = md_theme_dark_onSecondaryContainer,
-    tertiary = md_theme_dark_tertiary,
-    tertiaryContainer = md_theme_dark_tertiaryContainer,
-    onTertiary = md_theme_dark_onTertiary,
-    onTertiaryContainer = md_theme_dark_onTertiaryContainer,
-    error = md_theme_dark_error,
-    errorContainer = md_theme_dark_errorContainer,
-    onError = md_theme_dark_onError,
-    onErrorContainer = md_theme_dark_onErrorContainer,
-    outline = md_theme_dark_outline,
-    background = md_theme_dark_background,
-    onBackground = md_theme_dark_onBackground,
-    surface = md_theme_dark_surface,
-    onSurface = md_theme_dark_onSurface,
-    surfaceVariant = md_theme_dark_surfaceVariant,
-    onSurfaceVariant = md_theme_dark_onSurfaceVariant,
-    inverseSurface = md_theme_dark_inverseSurface,
-    inverseOnSurface = md_theme_dark_inverseOnSurface,
-    inversePrimary = md_theme_dark_inversePrimary,
-    surfaceTint = md_theme_dark_surfaceTint,
-    outlineVariant = md_theme_dark_outlineVariant,
-    scrim = md_theme_dark_scrim,
+    primary = neuDarkPrimary,
+    primaryContainer = neuDarkPrimaryContainer,
+    onPrimary = neuDarkOnPrimary,
+    secondary = neuDarkSecondary,
+    secondaryContainer = neuDarkSecondaryContainer,
+    onSecondary = neuDarkOnSecondary,
+    tertiary = neuDarkTertiary,
+    tertiaryContainer = neuDarkTertiaryContainer,
+    onTertiary = neuDarkOnTertiary,
+    error = neuDarkError,
+    errorContainer = neuDarkErrorContainer,
+    onError = neuDarkOnError,
+    onErrorContainer = neuDarkOnError,
+    background = neuDarkBackground,
+    onBackground = neuDarkOnBackground,
+    surface = neuDarkSurface,
+    onSurface = neuDarkOnSurface,
+    surfaceVariant = neuDarkSurfaceVariant,
+    onSurfaceVariant = neuDarkOnSurfaceVariant,
+    outline = neuDarkOutline,
+    outlineVariant = neuDarkOutlineVariant,
+    inverseSurface = neuWhite,
+    inverseOnSurface = neuBlack,
+    inversePrimary = neuDarkPrimary,
+    scrim = neuShadow
 )
-
-private fun hasDynamicColorSupport(): Boolean {
-    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-}
 
 @Composable
 fun PushNoteTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    val hasDynamicColorSupport = hasDynamicColorSupport()
-    val colors = when {
-        hasDynamicColorSupport && darkTheme -> {
-            dynamicDarkColorScheme(LocalContext.current)
-        }
-
-        hasDynamicColorSupport && !darkTheme -> {
-            dynamicLightColorScheme(LocalContext.current)
-        }
-
-        darkTheme -> {
-            darkColorScheme
-        }
-
-        else -> {
-            lightColorScheme
-        }
-    }
+    // Neubrutalism enforces a fixed bold palette; dynamic color is disabled.
+    val colors = if (darkTheme) darkColorScheme else lightColorScheme
 
     MaterialTheme(
         colorScheme = colors,

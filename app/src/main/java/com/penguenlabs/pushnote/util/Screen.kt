@@ -41,10 +41,12 @@ fun Screen(
 }
 
 private fun logScreenViewEvent(context: Context, screenName: String) {
-    FirebaseAnalytics.getInstance(context).logEvent(
-        FirebaseAnalytics.Event.SCREEN_VIEW, bundleOf(
-            FirebaseAnalytics.Param.SCREEN_NAME to screenName,
-            FirebaseAnalytics.Param.SCREEN_CLASS to screenName
+    runCatching {
+        FirebaseAnalytics.getInstance(context).logEvent(
+            FirebaseAnalytics.Event.SCREEN_VIEW, bundleOf(
+                FirebaseAnalytics.Param.SCREEN_NAME to screenName,
+                FirebaseAnalytics.Param.SCREEN_CLASS to screenName
+            )
         )
-    )
+    }
 }
