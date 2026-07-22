@@ -1,6 +1,6 @@
 <resources>
-    <string name="push_note">push note</string>
-    <string name="push">发送</string>
+    <string name="push_note">推送笔记</string>
+    <string name="push">推送笔记</string>
     <string name="schedule_set_success">闹钟设置成功</string>
     <string name="schedule_set_failed">闹钟设置失败，请检查权限</string>
     <string name="main_notifications">主要通知</string>
@@ -48,6 +48,7 @@
     <string name="repeat_monthly">每月</string>
     <string name="select_time">选择时间</string>
     <string name="confirm">确认</string>
+    <string name="arrange">安排</string>
     <string name="cancel">取消</string>
     <string name="clear_schedule">清除</string>
     <string name="schedule_date">日期</string>
@@ -56,4 +57,7 @@
     <string name="select_weekday">星期</string>
     <string name="monthly_day">日期</string>
     <string name="menu">菜单</string>
+    <string name="alarm_permission_title">需要闹钟权限</string>
+    <string name="alarm_permission_description">定时笔记需要“闹钟和提醒”权限才能准时触发。请在设置中允许本应用使用精确闹钟。</string>
+    <string name="open_settings">打开设置</string>
 </resources>

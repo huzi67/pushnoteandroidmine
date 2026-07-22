@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
@@ -6,26 +5,38 @@
     android:viewportHeight="24">
     <!-- Clock face -->
     <path
-        android:pathData="M12,7c-2.76,0 -5,2.24 -5,5s2.24,5 5,5s5,-2.24 5,-5s-2.24,-5 -5,-5z"
-        android:strokeColor="#000000"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
         android:strokeWidth="2"
-        android:fillColor="#00000000" />
-    <!-- Clock hands -->
+        android:pathData="M12,5 A7,7 0 1,1 12,19 A7,7 0 1,1 12,5" />
+    <!-- Hour hand -->
     <path
-        android:pathData="M12,12 L12,9 M12,12 L14.5,14"
-        android:strokeColor="#000000"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
         android:strokeWidth="2"
-        android:strokeLineCap="round" />
-    <!-- Bells -->
+        android:strokeLineCap="round"
+        android:pathData="M12,12 L10,9" />
+    <!-- Minute hand -->
     <path
-        android:pathData="M8.5,5.5 L6.5,3.5 M15.5,5.5 L17.5,3.5"
-        android:strokeColor="#000000"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
         android:strokeWidth="2"
-        android:strokeLineCap="round" />
-    <!-- Legs -->
+        android:strokeLineCap="round"
+        android:pathData="M12,12 L15,11" />
+    <!-- Left vibration buzz -->
     <path
-        android:pathData="M8.5,18.5 L7,21 M15.5,18.5 L17,21"
-        android:strokeColor="#000000"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
         android:strokeWidth="2"
-        android:strokeLineCap="round" />
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M4,10 L2,12 L4,14" />
+    <!-- Right vibration buzz -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M20,10 L22,12 L20,14" />
 </vector>

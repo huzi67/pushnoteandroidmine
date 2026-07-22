@@ -1,6 +1,9 @@
 package com.penguenlabs.pushnote.features.home.ui
 
+import android.app.AlarmManager
+import android.content.Intent
 import android.os.Build
+import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -10,6 +13,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +29,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
@@ -72,7 +78,9 @@ import com.penguenlabs.pushnote.theme.NeuFilterChip
 import com.penguenlabs.pushnote.theme.NeuIconButton
 import com.penguenlabs.pushnote.theme.NeuOutlinedButton
 import com.penguenlabs.pushnote.theme.NeuTextField
+import com.penguenlabs.pushnote.theme.neuBorderWidth
 import com.penguenlabs.pushnote.theme.neuRed
+import com.penguenlabs.pushnote.theme.neuShape
 import com.penguenlabs.pushnote.util.Screen
 import com.penguenlabs.pushnote.util.findActivity
 import kotlinx.coroutines.delay
@@ -113,6 +121,7 @@ fun HomeScreen(
             val inAppReviewManager = rememberInAppReviewManager()
             val context = LocalContext.current
             var showScheduleConfig by remember { mutableStateOf(false) }
+            var showAlarmPermissionDialog by remember { mutableStateOf(false) }
 
             // Schedule config state (local to avoid affecting main state until confirmed)
             var cfgHour by remember { mutableStateOf(homeScreeState.scheduleConfig.hour) }
@@ -124,6 +133,24 @@ fun HomeScreen(
             var cfgDayOfWeek by remember { mutableStateOf(homeScreeState.scheduleConfig.dayOfWeek) }
             var showTimePicker by remember { mutableStateOf(false) }
             var showDatePicker by remember { mutableStateOf(false) }
+
+            fun canScheduleExactAlarms(): Boolean {
+                return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as AlarmManager
+                    alarmManager.canScheduleExactAlarms()
+                } else {
+                    true
+                }
+            }
+
+            fun openAlarmSettings() {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                        data = android.net.Uri.parse("package:${context.packageName}")
+                    }
+                    context.startActivity(intent)
+                }
+            }
 
             NeuCard(
                 modifier = Modifier
@@ -184,16 +211,20 @@ fun HomeScreen(
                                     homeViewModel.clearSchedule()
                                     showScheduleConfig = false
                                 } else {
-                                    val hasExisting = homeScreeState.scheduleConfig.isScheduled
-                                    val now = java.util.Calendar.getInstance()
-                                    cfgHour = if (hasExisting) homeScreeState.scheduleConfig.hour else now.get(java.util.Calendar.HOUR_OF_DAY)
-                                    cfgMinute = if (hasExisting) homeScreeState.scheduleConfig.minute else now.get(java.util.Calendar.MINUTE)
-                                    cfgRepeat = homeScreeState.scheduleConfig.repeatMode
-                                    cfgYear = if (hasExisting) homeScreeState.scheduleConfig.year else now.get(java.util.Calendar.YEAR)
-                                    cfgMonth = if (hasExisting) homeScreeState.scheduleConfig.month else now.get(java.util.Calendar.MONTH)
-                                    cfgDay = if (hasExisting) homeScreeState.scheduleConfig.day else now.get(java.util.Calendar.DAY_OF_MONTH)
-                                    cfgDayOfWeek = homeScreeState.scheduleConfig.dayOfWeek
-                                    showScheduleConfig = true
+                                    if (!canScheduleExactAlarms()) {
+                                        showAlarmPermissionDialog = true
+                                    } else {
+                                        val hasExisting = homeScreeState.scheduleConfig.isScheduled
+                                        val now = java.util.Calendar.getInstance()
+                                        cfgHour = if (hasExisting) homeScreeState.scheduleConfig.hour else now.get(java.util.Calendar.HOUR_OF_DAY)
+                                        cfgMinute = if (hasExisting) homeScreeState.scheduleConfig.minute else now.get(java.util.Calendar.MINUTE)
+                                        cfgRepeat = homeScreeState.scheduleConfig.repeatMode
+                                        cfgYear = if (hasExisting) homeScreeState.scheduleConfig.year else now.get(java.util.Calendar.YEAR)
+                                        cfgMonth = if (hasExisting) homeScreeState.scheduleConfig.month else now.get(java.util.Calendar.MONTH)
+                                        cfgDay = if (hasExisting) homeScreeState.scheduleConfig.day else now.get(java.util.Calendar.DAY_OF_MONTH)
+                                        cfgDayOfWeek = homeScreeState.scheduleConfig.dayOfWeek
+                                        showScheduleConfig = true
+                                    }
                                 }
                             },
                             backgroundColor = if (showScheduleConfig || homeScreeState.scheduleConfig.isScheduled) SCHEDULE_RED
@@ -346,13 +377,17 @@ fun HomeScreen(
                             .height(50.dp),
                         onClick = {
                             if (showScheduleConfig) {
-                                homeViewModel.onScheduleTimeChanged(cfgHour, cfgMinute)
-                                val y = cfgYear; val m = cfgMonth; val d = cfgDay
-                                if (y != null && m != null && d != null) homeViewModel.onScheduleDateChanged(y, m, d)
-                                cfgDayOfWeek?.let { homeViewModel.onScheduleDayOfWeekChanged(it) }
-                                homeViewModel.onRepeatModeChanged(cfgRepeat)
-                                homeViewModel.onScheduleToggled(true)
-                                showScheduleConfig = false
+                                if (!canScheduleExactAlarms()) {
+                                    showAlarmPermissionDialog = true
+                                } else {
+                                    homeViewModel.onScheduleTimeChanged(cfgHour, cfgMinute)
+                                    val y = cfgYear; val m = cfgMonth; val d = cfgDay
+                                    if (y != null && m != null && d != null) homeViewModel.onScheduleDateChanged(y, m, d)
+                                    cfgDayOfWeek?.let { homeViewModel.onScheduleDayOfWeekChanged(it) }
+                                    homeViewModel.onRepeatModeChanged(cfgRepeat)
+                                    homeViewModel.onScheduleToggled(true)
+                                    showScheduleConfig = false
+                                }
                             } else if (notificationPermissionState?.status?.isGranted?.not() == true) {
                                 onNotificationPermissionNeed(homeScreeState.textFieldValue)
                             } else {
@@ -364,7 +399,7 @@ fun HomeScreen(
                         }
                     ) {
                         Text(
-                            text = if (showScheduleConfig) stringResource(id = R.string.confirm)
+                            text = if (showScheduleConfig) stringResource(id = R.string.arrange)
                             else if (homeScreeState.scheduleConfig.isScheduled) stringResource(id = R.string.schedule_push)
                             else stringResource(id = R.string.push),
                             color = MaterialTheme.colorScheme.onPrimary,
@@ -425,8 +460,9 @@ fun HomeScreen(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     NeuButton(
                                         modifier = Modifier
-                                            .width(90.dp)
+                                            .width(110.dp)
                                             .height(40.dp),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                                         onClick = {
                                             cfgHour = tp.hour
                                             cfgMinute = tp.minute
@@ -436,7 +472,8 @@ fun HomeScreen(
                                         Text(
                                             stringResource(id = R.string.confirm),
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp
+                                            fontSize = 14.sp,
+                                            color = MaterialTheme.colorScheme.onPrimary
                                         )
                                     }
                                 }
@@ -472,10 +509,17 @@ fun HomeScreen(
                     onDismissRequest = { showDatePicker = false },
                     colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
                     confirmButton = {
-                        NeuButton(
+                        Button(
                             modifier = Modifier
-                                .width(90.dp)
+                                .width(110.dp)
                                 .height(40.dp),
+                            shape = neuShape,
+                            border = BorderStroke(neuBorderWidth, MaterialTheme.colorScheme.outline),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                             onClick = {
                                 dp.selectedDateMillis?.let {
                                     val c = java.util.Calendar.getInstance().apply { timeInMillis = it }
@@ -504,6 +548,50 @@ fun HomeScreen(
                     }
                 ) {
                     DatePicker(state = dp)
+                }
+            }
+
+            // Alarm permission dialog
+            if (showAlarmPermissionDialog) {
+                Dialog(onDismissRequest = { showAlarmPermissionDialog = false }) {
+                    NeuCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        backgroundColor = MaterialTheme.colorScheme.background
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp)
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.alarm_permission_title),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(id = R.string.alarm_permission_description),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            NeuButton(
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                onClick = {
+                                    openAlarmSettings()
+                                    showAlarmPermissionDialog = false
+                                }
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.open_settings),
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 16.sp
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
