@@ -11,6 +11,7 @@ import com.penguenlabs.pushnote.data.local.MIGRATION_3_4
 import com.penguenlabs.pushnote.data.local.MIGRATION_4_5
 import com.penguenlabs.pushnote.data.local.MIGRATION_5_6
 import com.penguenlabs.pushnote.data.local.MIGRATION_6_7
+import com.penguenlabs.pushnote.data.local.MIGRATION_7_8
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -36,7 +37,7 @@ object DataModule {
         context,
         HistoryDatabase::class.java,
         DATABASE_NAME
-    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7).build()
+    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8).build()
 
     @Singleton
     @Provides

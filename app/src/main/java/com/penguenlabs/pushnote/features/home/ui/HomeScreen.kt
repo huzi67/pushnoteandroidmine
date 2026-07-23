@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -131,6 +132,7 @@ fun HomeScreen(
             var cfgMonth by remember { mutableStateOf(homeScreeState.scheduleConfig.month) }
             var cfgDay by remember { mutableStateOf(homeScreeState.scheduleConfig.day) }
             var cfgDayOfWeek by remember { mutableStateOf(homeScreeState.scheduleConfig.dayOfWeek) }
+            var cfgSystemAlarm by remember { mutableStateOf(homeScreeState.scheduleConfig.systemAlarm) }
             var showTimePicker by remember { mutableStateOf(false) }
             var showDatePicker by remember { mutableStateOf(false) }
 
@@ -203,7 +205,7 @@ fun HomeScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Alarm icon — toggle schedule panel
+                    // Schedule / system alarm toggles
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         NeuIconButton(
                             onClick = {
@@ -223,6 +225,7 @@ fun HomeScreen(
                                         cfgMonth = if (hasExisting) homeScreeState.scheduleConfig.month else now.get(java.util.Calendar.MONTH)
                                         cfgDay = if (hasExisting) homeScreeState.scheduleConfig.day else now.get(java.util.Calendar.DAY_OF_MONTH)
                                         cfgDayOfWeek = homeScreeState.scheduleConfig.dayOfWeek
+                                        cfgSystemAlarm = homeScreeState.scheduleConfig.systemAlarm
                                         showScheduleConfig = true
                                     }
                                 }
@@ -247,6 +250,26 @@ fun HomeScreen(
                             else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                             fontWeight = FontWeight.Bold
                         )
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        // System alarm checkbox (toggle)
+                        NeuIconButton(
+                            onClick = {
+                                cfgSystemAlarm = !cfgSystemAlarm
+                            },
+                            backgroundColor = if (cfgSystemAlarm) SCHEDULE_RED
+                            else MaterialTheme.colorScheme.surface,
+                            contentColor = if (cfgSystemAlarm) Color.Black
+                            else MaterialTheme.colorScheme.onBackground,
+                            borderColor = MaterialTheme.colorScheme.outline
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_system_alarm),
+                                contentDescription = stringResource(id = R.string.system_alarm),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
 
                     // Schedule config — expand first, then content slides in
@@ -315,14 +338,14 @@ fun HomeScreen(
                             // Repeat chips
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)
                             ) {
                                 repeatChips.forEach { (mode, label) ->
                                     NeuFilterChip(
                                         selected = cfgRepeat == mode,
                                         onClick = { cfgRepeat = mode },
                                         label = { Text(stringResource(label), fontSize = 11.sp) },
-                                        modifier = Modifier.weight(1f)
+                                        modifier = Modifier.widthIn(min = 70.dp)
                                     )
                                 }
                             }
@@ -385,6 +408,7 @@ fun HomeScreen(
                                     if (y != null && m != null && d != null) homeViewModel.onScheduleDateChanged(y, m, d)
                                     cfgDayOfWeek?.let { homeViewModel.onScheduleDayOfWeekChanged(it) }
                                     homeViewModel.onRepeatModeChanged(cfgRepeat)
+                                    homeViewModel.onSystemAlarmChanged(cfgSystemAlarm)
                                     homeViewModel.onScheduleToggled(true)
                                     showScheduleConfig = false
                                 }

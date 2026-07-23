@@ -40,6 +40,7 @@
     <string name="notification_permission_description">push note allows you to keep your notes and reminders in the notification bar for quick access. To enable this feature, we need your permission to send notifications to your device.</string>
     <string name="allow">Allow</string>
     <string name="schedule_note">定时笔记</string>
+    <string name="system_alarm">System Alarm</string>
     <string name="schedule_time">Time</string>
     <string name="repeat_mode">Repeat</string>
     <string name="repeat_none">No repeat</string>

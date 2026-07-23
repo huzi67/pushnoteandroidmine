@@ -12,6 +12,7 @@ import com.penguenlabs.pushnote.data.local.entity.HistoryEntity
 import com.penguenlabs.pushnote.data.local.entity.ScheduledNoteEntity
 import com.penguenlabs.pushnote.features.home.data.HomeRepository
 import com.penguenlabs.pushnote.features.schedule.ScheduleAlarmManager
+import com.penguenlabs.pushnote.features.schedule.SystemAlarmManager
 import com.penguenlabs.pushnote.pushnotification.counter.NotificationCounter
 import com.penguenlabs.pushnote.pushnotification.sender.NotificationSender
 import com.penguenlabs.pushnote.userdefault.pinnednotification.PinnedNoteUserDefault
@@ -28,7 +29,8 @@ class HomeViewModel @Inject constructor(
     private val homeRepository: HomeRepository,
     private val eventLogger: EventLogger,
     private val notificationCounter: NotificationCounter,
-    private val scheduleAlarmManager: ScheduleAlarmManager
+    private val scheduleAlarmManager: ScheduleAlarmManager,
+    private val systemAlarmManager: SystemAlarmManager
 ) : ViewModel() {
 
     var homeScreeState by mutableStateOf(
@@ -101,10 +103,15 @@ class HomeViewModel @Inject constructor(
                         year = scheduleConfig.year,
                         month = scheduleConfig.month,
                         day = scheduleConfig.day,
-                        dayOfWeek = scheduleConfig.dayOfWeek
+                        dayOfWeek = scheduleConfig.dayOfWeek,
+                        systemAlarm = scheduleConfig.systemAlarm
                     )
                     val scheduledNoteId = homeRepository.insertScheduledNote(scheduledNote)
-                    val ok = scheduleAlarmManager.schedule(scheduledNote.copy(id = scheduledNoteId))
+                    val noteWithId = scheduledNote.copy(id = scheduledNoteId)
+                    val ok = scheduleAlarmManager.schedule(noteWithId)
+                    if (scheduleConfig.systemAlarm) {
+                        systemAlarmManager.schedule(noteWithId)
+                    }
                     _scheduleResult.emit(ok)
                 } else {
                     if (isPinnedNote) {
@@ -199,6 +206,12 @@ class HomeViewModel @Inject constructor(
     fun onScheduleDayOfWeekChanged(dayOfWeek: Int) {
         homeScreeState = homeScreeState.copy(
             scheduleConfig = homeScreeState.scheduleConfig.copy(dayOfWeek = dayOfWeek)
+        )
+    }
+
+    fun onSystemAlarmChanged(systemAlarm: Boolean) {
+        homeScreeState = homeScreeState.copy(
+            scheduleConfig = homeScreeState.scheduleConfig.copy(systemAlarm = systemAlarm)
         )
     }
 

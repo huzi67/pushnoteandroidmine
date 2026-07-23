@@ -8,6 +8,7 @@ import com.penguenlabs.pushnote.analytics.Event
 import com.penguenlabs.pushnote.analytics.EventLogger
 import com.penguenlabs.pushnote.data.local.dao.ScheduledNoteDao
 import com.penguenlabs.pushnote.features.schedule.ScheduleAlarmManager
+import com.penguenlabs.pushnote.features.schedule.SystemAlarmManager
 import com.penguenlabs.pushnote.pushnotification.sender.NotificationSender
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -35,6 +36,9 @@ class BootBroadcastReceiver : BroadcastReceiver() {
 
     @Inject
     lateinit var scheduleAlarmManager: ScheduleAlarmManager
+
+    @Inject
+    lateinit var systemAlarmManager: SystemAlarmManager
 
     @Inject
     lateinit var scheduledNoteDao: ScheduledNoteDao
@@ -86,6 +90,9 @@ class BootBroadcastReceiver : BroadcastReceiver() {
                 scheduledNoteDao.getAllActive().firstOrNull()?.let { scheduledNotes ->
                     scheduledNotes.forEach { scheduledNote ->
                         scheduleAlarmManager.schedule(scheduledNote)
+                        if (scheduledNote.systemAlarm) {
+                            systemAlarmManager.schedule(scheduledNote)
+                        }
                     }
                 }
             }

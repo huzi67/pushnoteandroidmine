@@ -15,6 +15,7 @@ data class ScheduledNoteEntity(
     @ColumnInfo(name = "schedule_month") val month: Int? = null,
     @ColumnInfo(name = "schedule_day") val day: Int? = null,
     @ColumnInfo(name = "schedule_day_of_week") val dayOfWeek: Int? = null,
+    @ColumnInfo(name = "system_alarm") val systemAlarm: Boolean = false,
     @ColumnInfo(name = "is_active") val isActive: Boolean = true,
     @ColumnInfo(name = "created_at") val createdAt: Long = System.currentTimeMillis()
 )

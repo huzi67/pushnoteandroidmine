@@ -10,7 +10,8 @@ data class ScheduleConfig(
     val month: Int? = null,
     val day: Int? = null,
     val dayOfWeek: Int? = null,
-    val repeatMode: RepeatMode = RepeatMode.NONE
+    val repeatMode: RepeatMode = RepeatMode.NONE,
+    val systemAlarm: Boolean = false
 )
 
 data class HomeScreenState(

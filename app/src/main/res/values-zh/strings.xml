@@ -40,6 +40,7 @@
     <string name="notification_permission_description">推送笔记允许您将笔记和提醒保存在通知栏中以便快速访问。要启用此功能，我们需要您的权限来向您的设备发送通知。</string>
     <string name="allow">允许</string>
     <string name="schedule_note">定时笔记</string>
+    <string name="system_alarm">系统闹钟</string>
     <string name="schedule_time">时间</string>
     <string name="repeat_mode">重复</string>
     <string name="repeat_none">不重复</string>
